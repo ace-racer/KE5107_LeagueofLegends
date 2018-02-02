@@ -18,4 +18,5 @@ Repository to contain all the R scripts that we develop for the KE5107 course CA
 
 4. You can have a look at 'anurag' branch to get an idea of what should be present in your branch
 
-
+### Kindly note
+5. Please do not commit anything to the master branch. This is the sacred branch where we consolidate our code after the discussion!
