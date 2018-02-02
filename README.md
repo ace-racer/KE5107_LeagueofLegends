@@ -10,4 +10,10 @@ Repository to contain all the R scripts that we develop for the KE5107 course CA
     `git checkout <<name>>`
     E.g. `git checkout anurag`
 
+3. Write your code in this branch and then add, commit the changes like you would have done normally. Then use the below code tp push your changes to the remote repository:
+    `git push origin <<name>>`
+    E.g. `git push origin anurag`
+
+Validate that your changes have made way to remote by checking in the GitHub web portal!
+
 
