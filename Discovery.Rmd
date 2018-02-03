@@ -10,11 +10,20 @@ matches_data
 ```
 
 ```{r}
+# check if there are any draws or both wins in a game
+bResults <- matches_data$bResult
+rResults <- matches_data$rResult
+bResultsLength <- length(bResults)
+rResultsLength <- length(rResults)
 
-# Get the column types
-sapply(matches_data, class)
 
-# Get the summary of the columns
-summary(matches_data)
+paste("Number of blue results: ", bResultsLength)
+paste("Number of red results: ", rResultsLength)
 
+# Find the number of rows where result of red and blue were same 
+# use Xor for this calculation
+#length(matches_data[xor(matches_data$bResult, matches_data$rResult) == FALSE, ])
+
+#length(matches_data[(matches_data$bResult) | (matches_data$rResult), ])
+length(matches_data)
 ```
