@@ -1,6 +1,8 @@
 ---
 title: "Describe Data - Pier"
-output: html_notebook
+output:
+  html_document:
+    keep_md: true
 ---
 
 > Do we need to segregate the matches by type?   
@@ -13,6 +15,8 @@ golddiff is defined as goldblue - goldred, by the minute
 > There are 4 categories of games. 
 
 ```{r}
+matches <- read.csv("matches.csv")
+
 match_categories <- unique(matches$Type)
 print(match_categories)
 print(length(match_categories))
