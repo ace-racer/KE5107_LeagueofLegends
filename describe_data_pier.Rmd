@@ -1,0 +1,39 @@
+---
+title: "Describe Data - Pier"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+match_categories <- unique(matches$Type)
+print(match_categories)
+print(length(match_categories))
+
+# Question : Do we need to segregate the matches by type? 
+#            How does type influence the match gameplay? 
+
+```
+```{r}
+# golddiff is defined as goldblue - goldred, by the minute
+# we can remove goldblue, goldred? Is the actual quantity significant? 
+
+# extract just golddiff for analysis
+just_gold_diff = gsub("\\[|\\]", "", matches$golddiff)
+golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
+golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
+head(golddiff_split_by_min)
+```
+```{r}
+plot(colMeans(golddiff_split_by_min), type="b", xlab="Minutes", ylab="Average Gold Diff (Blue - Red)")
+# Insanely skewed towards blue! No negative vlaues at all. Did I miss something? 
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

@@ -1,1 +1,2 @@
-# Just testing folks. 
+# Testing code before putting in the R notebook
+
