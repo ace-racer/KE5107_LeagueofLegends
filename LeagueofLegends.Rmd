@@ -7,6 +7,7 @@ output: html_document
 
 library(ggplot2)
 library(bitops)
+library(tidyr)
 library(RCurl)
 library(ggthemes)
 library(foreign)
@@ -27,6 +28,7 @@ library(MASS)
 # Source: https://www.kaggle.com/chuckephron/leagueoflegends
 getwd()
 
+# Tip: don't run seperately with load command.
 # PC:
 # setwd('C:/Users/Gebruiker 1/Dropbox/NUS/Data mining/leagueoflegends')
 # laptop:
@@ -44,6 +46,35 @@ cuberoot_trans = function() trans_new('cuberoot',
                                       transform = function(x) x^(1/3), 
                                       inverse = function(x) X^3)
 
+
+
+# Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
+
+create_column_names <- function(columns){
+  maxnr <- max(matches$columns)
+  vectofnr = c();
+  for (i in 1:81){
+    # print(i)
+    vectofnr[i] <- paste("gold diff in minute", as.character(i))
+    # print(vectofnr)
+  }
+  return(vectofnr)
+}
+# because it is so slow, maybe we can also put it in a global var:
+listofcolumns <- create_column_names(gamelength)
+
+# nrofcolumn <- function(nrsofcolumn){
+#   while(nrofcolumn > 0){
+#     print(nrofcolumn);
+#     listofnr = c();
+#     listofnr <- as.character(nrofcolumn);
+#     print(listofnr);
+#     nrofcolumn <- nrofcolumn-1
+#   }
+#   return(listofnr)
+# }
+# 
+# nrofcolumn(3)
 
 ```
 
@@ -64,15 +95,19 @@ summary(matches$bResult)
 str(matches)
 # So there are 185 teams --> seems like a lot? Do teams change from name?
 
-
 ## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
 matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
 
-## 0.4.3 making different columns out of each array
+## 0.4.3 making different columns out of each golddiff array with function
 
-matches$golddif1 <- matches$golddiff[1][]
+# get rid of [ & ]
+matches$golddiff <- substring(matches$golddiff, 2, str_length(matches$golddiff)-1)
 
+# It gets messy very easily so extra dataset
+matches2 <- matches %>%
+  separate(golddiff, into = c(create_column_names(gamelength)), sep = "\\,")
 
 ## 0.4.4 Square the data if scewed 
+
 
 ```
