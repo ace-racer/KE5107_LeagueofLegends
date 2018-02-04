@@ -173,27 +173,15 @@ $(document).ready(function () {
 
 
 <!-- rnb-text-begin -->
-<p>This is an <a href="http://rmarkdown.rstudio.com">R Markdown</a> Notebook. When you execute code within the notebook, the results appear beneath the code.</p>
-<p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Cmd+Shift+Enter</em>.</p>
+<p>Do we need to segregate the matches by type? How does type influence the match gameplay?</p>
+<p>golddiff is defined as goldblue - goldred, by the minute we can remove goldblue, goldred? Is the actual quantity significant?</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWF0Y2hfY2F0ZWdvcmllcyA8LSB1bmlxdWUobWF0Y2hlcyRUeXBlKVxucHJpbnQobWF0Y2hfY2F0ZWdvcmllcylcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWF0Y2hfY2F0ZWdvcmllcyA8LSB1bmlxdWUobWF0Y2hlcyRUeXBlKVxucHJpbnQobWF0Y2hfY2F0ZWdvcmllcylcbnByaW50KGxlbmd0aChtYXRjaF9jYXRlZ29yaWVzKSlcblxuXG5cbmBgYCJ9 -->
 <pre class="r"><code>match_categories &lt;- unique(matches$Type)
-print(match_categories)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFNlYXNvbiAgICAgICAgUGxheW9mZnMgICAgICBSZWdpb25hbCAgICAgIEludGVybmF0aW9uYWxcbkxldmVsczogSW50ZXJuYXRpb25hbCBQbGF5b2ZmcyBSZWdpb25hbCBTZWFzb25cbiJ9 -->
-<pre><code>[1] Season        Playoffs      Regional      International
-Levels: International Playoffs Regional Season</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJpbnQobGVuZ3RoKG1hdGNoX2NhdGVnb3JpZXMpKVxuYGBgIn0= -->
-<pre class="r"><code>print(length(match_categories))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDRcbiJ9 -->
-<pre><code>[1] 4</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBRdWVzdGlvbiA6IERvIHdlIG5lZWQgdG8gc2VncmVnYXRlIHRoZSBtYXRjaGVzIGJ5IHR5cGU/IFxuIyAgICAgICAgICAgIEhvdyBkb2VzIHR5cGUgaW5mbHVlbmNlIHRoZSBtYXRjaCBnYW1lcGxheT8gXG5gYGAifQ== -->
-<pre class="r"><code># Question : Do we need to segregate the matches by type? 
-#            How does type influence the match gameplay? </code></pre>
+print(match_categories)
+print(length(match_categories))
+</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-chunk-begin -->
@@ -219,18 +207,42 @@ head(golddiff_split_by_min)</code></pre>
 <!-- rnb-frame-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdChjb2xNZWFucyhnb2xkZGlmZl9zcGxpdF9ieV9taW4pLCB0eXBlPVwiYlwiLCB4bGFiPVwiTWludXRlc1wiLCB5bGFiPVwiQXZlcmFnZSBHb2xkIERpZmYgKEJsdWUgLSBSZWQpXCIpXG4jIEluc2FuZWx5IHNrZXdlZCB0b3dhcmRzIGJsdWUhIE5vIG5lZ2F0aXZlIHZsYXVlcyBhdCBhbGwuIERpZCBJIG1pc3Mgc29tZXRoaW5nPyBcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdChjb2xNZWFucyhnb2xkZGlmZl9zcGxpdF9ieV9taW4pLCB0eXBlPVwiYlwiLCB4bGFiPVwiTWludXRlc1wiLCB5bGFiPVwiQXZlcmFnZSBHb2xkIERpZmYgKEJsdWUgLSBSZWQpXCIpXG5cbmBgYCJ9 -->
 <pre class="r"><code>plot(colMeans(golddiff_split_by_min), type=&quot;b&quot;, xlab=&quot;Minutes&quot;, ylab=&quot;Average Gold Diff (Blue - Red)&quot;)
-# Insanely skewed towards blue! No negative vlaues at all. Did I miss something? </code></pre>
+</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Cmd+Option+I</em>.</p>
-<p>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the <em>Preview</em> button or press <em>Cmd+Shift+K</em> to preview the HTML file).</p>
-<p>The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike <em>Knit</em>, <em>Preview</em> does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.</p>
+<p>Insanely skewed towards blue! No negative values (none indicating red had more gold than blue) at all. Did I miss something?</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudW5pcXVlKG1hdGNoZXMkYmx1ZVRvcENoYW1wKVxuYGBgIn0= -->
+<pre class="r"><code>unique(matches$blueTopChamp)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiIFsxXSBJcmVsaWEgICAgICBHbmFyICAgICAgICBSZW5la3RvbiAgICBLYXNzYWRpbiAgICBTaW9uICAgICAgICBKYXggICAgICAgICBMdWx1ICAgICAgICBNYW9rYWkgICAgICBSdW1ibGUgICAgIFxuWzEwXSBMaXNzYW5kcmEgICBSZWtTYWkgICAgICBGaXp6ICAgICAgICBNb3JnYW5hICAgICBLZW5uZW4gICAgICBHcmFnYXMgICAgICBEck11bmRvICAgICBWbGFkaW1pciAgICBIZWNhcmltICAgIFxuWzE5XSBSeXplICAgICAgICBFa2tvICAgICAgICBTaGVuICAgICAgICBOYXV0aWx1cyAgICBLaGF6aXggICAgICBSaXZlbiAgICAgICBPbGFmICAgICAgICBTaHl2YW5hICAgICBZYXN1byAgICAgIFxuWzI4XSBNYWxwaGl0ZSAgICBGaW9yYSAgICAgICBUYWhtS2VuY2ggICBQb3BweSAgICAgICBHYW5ncGxhbmsgICBHcmF2ZXMgICAgICBRdWlubiAgICAgICBUcnVuZGxlICAgICBQYW50aGVvbiAgIFxuWzM3XSBSYW1tdXMgICAgICBTd2FpbiAgICAgICBKYXJ2YW5JViAgICBJbGxhb2kgICAgICBMdWNpYW4gICAgICBKYXljZSAgICAgICBDYW1pbGxlICAgICBTaW5nZWQgICAgICBLbGVkICAgICAgIFxuWzQ2XSBHYWxpbyAgICAgICBDaG9nYXRoICAgICBOYXN1cyAgICAgICBDYXNzaW9wZWlhICBBemlyICAgICAgICBZb3JpY2sgICAgICBEaWFuYSAgICAgICBOb2N0dXJuZSAgICBMZWVTaW4gICAgIFxuWzU1XSBaYWMgICAgICAgICBUYWxpeWFoICAgICBNYWx6YWhhciAgICBBa2FsaSAgICAgICBUZWVtbyAgICAgICBCYXJkICAgICAgICBOaWRhbGVlICAgICBOdW51ICAgICAgICBSZW5nYXIgICAgIFxuWzY0XSBTZWp1YW5pICAgICBNb3JkZWthaXNlciBWYXJ1cyAgICAgICBLYXlsZSAgICAgICBEYXJpdXMgICAgICBaZWQgICAgICAgICBYaW5aaGFvICAgICBCbGl0emNyYW5rICBUYWxvbiAgICAgIFxuWzczXSBVcmdvdCAgICAgICBBbGlzdGFyICAgICBXYXJ3aWNrICAgIFxuNzUgTGV2ZWxzOiBBa2FsaSBBbGlzdGFyIEF6aXIgQmFyZCBCbGl0emNyYW5rIENhbWlsbGUgQ2Fzc2lvcGVpYSBDaG9nYXRoIERhcml1cyBEaWFuYSBEck11bmRvIEVra28gRmlvcmEgLi4uIFplZFxuIn0= -->
+<pre><code> [1] Irelia      Gnar        Renekton    Kassadin    Sion        Jax         Lulu        Maokai      Rumble     
+[10] Lissandra   RekSai      Fizz        Morgana     Kennen      Gragas      DrMundo     Vladimir    Hecarim    
+[19] Ryze        Ekko        Shen        Nautilus    Khazix      Riven       Olaf        Shyvana     Yasuo      
+[28] Malphite    Fiora       TahmKench   Poppy       Gangplank   Graves      Quinn       Trundle     Pantheon   
+[37] Rammus      Swain       JarvanIV    Illaoi      Lucian      Jayce       Camille     Singed      Kled       
+[46] Galio       Chogath     Nasus       Cassiopeia  Azir        Yorick      Diana       Nocturne    LeeSin     
+[55] Zac         Taliyah     Malzahar    Akali       Teemo       Bard        Nidalee     Nunu        Rengar     
+[64] Sejuani     Mordekaiser Varus       Kayle       Darius      Zed         XinZhao     Blitzcrank  Talon      
+[73] Urgot       Alistar     Warwick    
+75 Levels: Akali Alistar Azir Bard Blitzcrank Camille Cassiopeia Chogath Darius Diana DrMundo Ekko Fiora ... Zed</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxud2l0aChtYXRjaGVzLCBjb3IoYXMubnVtZXJpYyhtYXRjaGVzJGJsdWVUb3ApLCBhcy5udW1lcmljKG1hdGNoZXMkYmx1ZVRvcENoYW1wKSkpXG5gYGAifQ== -->
+<pre class="r"><code>with(matches, cor(as.numeric(matches$blueTop), as.numeric(matches$blueTopChamp)))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDEyNDE0MjZcbiJ9 -->
+<pre><code>[1] 0.01241426</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>There are 75 different champions. There is not a strong correlation between the player and the champion that they use in the matches.</p>
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiRGVzY3JpYmUgRGF0YSAtIFBpZXIiCm91dHB1dDogaHRtbF9ub3RlYm9vawotLS0KClRoaXMgaXMgYW4gW1IgTWFya2Rvd25dKGh0dHA6Ly9ybWFya2Rvd24ucnN0dWRpby5jb20pIE5vdGVib29rLiBXaGVuIHlvdSBleGVjdXRlIGNvZGUgd2l0aGluIHRoZSBub3RlYm9vaywgdGhlIHJlc3VsdHMgYXBwZWFyIGJlbmVhdGggdGhlIGNvZGUuIAoKVHJ5IGV4ZWN1dGluZyB0aGlzIGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqUnVuKiBidXR0b24gd2l0aGluIHRoZSBjaHVuayBvciBieSBwbGFjaW5nIHlvdXIgY3Vyc29yIGluc2lkZSBpdCBhbmQgcHJlc3NpbmcgKkNtZCtTaGlmdCtFbnRlciouIAoKYGBge3J9Cm1hdGNoX2NhdGVnb3JpZXMgPC0gdW5pcXVlKG1hdGNoZXMkVHlwZSkKcHJpbnQobWF0Y2hfY2F0ZWdvcmllcykKcHJpbnQobGVuZ3RoKG1hdGNoX2NhdGVnb3JpZXMpKQoKIyBRdWVzdGlvbiA6IERvIHdlIG5lZWQgdG8gc2VncmVnYXRlIHRoZSBtYXRjaGVzIGJ5IHR5cGU/IAojICAgICAgICAgICAgSG93IGRvZXMgdHlwZSBpbmZsdWVuY2UgdGhlIG1hdGNoIGdhbWVwbGF5PyAKCmBgYApgYGB7cn0KIyBnb2xkZGlmZiBpcyBkZWZpbmVkIGFzIGdvbGRibHVlIC0gZ29sZHJlZCwgYnkgdGhlIG1pbnV0ZQojIHdlIGNhbiByZW1vdmUgZ29sZGJsdWUsIGdvbGRyZWQ/IElzIHRoZSBhY3R1YWwgcXVhbnRpdHkgc2lnbmlmaWNhbnQ/IAoKIyBleHRyYWN0IGp1c3QgZ29sZGRpZmYgZm9yIGFuYWx5c2lzCmp1c3RfZ29sZF9kaWZmID0gZ3N1YigiXFxbfFxcXSIsICIiLCBtYXRjaGVzJGdvbGRkaWZmKQpnb2xkZGlmZl9zcGxpdF9ieV9taW4gPSBkby5jYWxsKCJyYmluZCIsIHN0cnNwbGl0KGp1c3RfZ29sZF9kaWZmLCAiLCIpKSAjIHJlbW92ZSB0aGUgLCAKZ29sZGRpZmZfc3BsaXRfYnlfbWluID0gZGF0YS5mcmFtZShhcHBseShnb2xkZGlmZl9zcGxpdF9ieV9taW4sIDIsIGFzLm51bWVyaWMpKSAjIGNvbnZlcnQgc3RyIHRvIG51bQpoZWFkKGdvbGRkaWZmX3NwbGl0X2J5X21pbikKYGBgCmBgYHtyfQpwbG90KGNvbE1lYW5zKGdvbGRkaWZmX3NwbGl0X2J5X21pbiksIHR5cGU9ImIiLCB4bGFiPSJNaW51dGVzIiwgeWxhYj0iQXZlcmFnZSBHb2xkIERpZmYgKEJsdWUgLSBSZWQpIikKIyBJbnNhbmVseSBza2V3ZWQgdG93YXJkcyBibHVlISBObyBuZWdhdGl2ZSB2bGF1ZXMgYXQgYWxsLiBEaWQgSSBtaXNzIHNvbWV0aGluZz8gCmBgYAoKQWRkIGEgbmV3IGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqSW5zZXJ0IENodW5rKiBidXR0b24gb24gdGhlIHRvb2xiYXIgb3IgYnkgcHJlc3NpbmcgKkNtZCtPcHRpb24rSSouCgpXaGVuIHlvdSBzYXZlIHRoZSBub3RlYm9vaywgYW4gSFRNTCBmaWxlIGNvbnRhaW5pbmcgdGhlIGNvZGUgYW5kIG91dHB1dCB3aWxsIGJlIHNhdmVkIGFsb25nc2lkZSBpdCAoY2xpY2sgdGhlICpQcmV2aWV3KiBidXR0b24gb3IgcHJlc3MgKkNtZCtTaGlmdCtLKiB0byBwcmV2aWV3IHRoZSBIVE1MIGZpbGUpLiAKClRoZSBwcmV2aWV3IHNob3dzIHlvdSBhIHJlbmRlcmVkIEhUTUwgY29weSBvZiB0aGUgY29udGVudHMgb2YgdGhlIGVkaXRvci4gQ29uc2VxdWVudGx5LCB1bmxpa2UgKktuaXQqLCAqUHJldmlldyogZG9lcyBub3QgcnVuIGFueSBSIGNvZGUgY2h1bmtzLiBJbnN0ZWFkLCB0aGUgb3V0cHV0IG9mIHRoZSBjaHVuayB3aGVuIGl0IHdhcyBsYXN0IHJ1biBpbiB0aGUgZWRpdG9yIGlzIGRpc3BsYXllZC4KCg==</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiRGVzY3JpYmUgRGF0YSAtIFBpZXIiCm91dHB1dDogaHRtbF9ub3RlYm9vawotLS0KCkRvIHdlIG5lZWQgdG8gc2VncmVnYXRlIHRoZSBtYXRjaGVzIGJ5IHR5cGU/IApIb3cgZG9lcyB0eXBlIGluZmx1ZW5jZSB0aGUgbWF0Y2ggZ2FtZXBsYXk/IAoKZ29sZGRpZmYgaXMgZGVmaW5lZCBhcyBnb2xkYmx1ZSAtIGdvbGRyZWQsIGJ5IHRoZSBtaW51dGUKd2UgY2FuIHJlbW92ZSBnb2xkYmx1ZSwgZ29sZHJlZD8gSXMgdGhlIGFjdHVhbCBxdWFudGl0eSBzaWduaWZpY2FudD8gCgpgYGB7cn0KbWF0Y2hfY2F0ZWdvcmllcyA8LSB1bmlxdWUobWF0Y2hlcyRUeXBlKQpwcmludChtYXRjaF9jYXRlZ29yaWVzKQpwcmludChsZW5ndGgobWF0Y2hfY2F0ZWdvcmllcykpCgoKCmBgYApgYGB7cn0KIyBleHRyYWN0IGp1c3QgZ29sZGRpZmYgZm9yIGFuYWx5c2lzCmp1c3RfZ29sZF9kaWZmID0gZ3N1YigiXFxbfFxcXSIsICIiLCBtYXRjaGVzJGdvbGRkaWZmKQpnb2xkZGlmZl9zcGxpdF9ieV9taW4gPSBkby5jYWxsKCJyYmluZCIsIHN0cnNwbGl0KGp1c3RfZ29sZF9kaWZmLCAiLCIpKSAjIHJlbW92ZSB0aGUgLCAKZ29sZGRpZmZfc3BsaXRfYnlfbWluID0gZGF0YS5mcmFtZShhcHBseShnb2xkZGlmZl9zcGxpdF9ieV9taW4sIDIsIGFzLm51bWVyaWMpKSAjIGNvbnZlcnQgc3RyIHRvIG51bQpoZWFkKGdvbGRkaWZmX3NwbGl0X2J5X21pbikKYGBgCmBgYHtyfQpwbG90KGNvbE1lYW5zKGdvbGRkaWZmX3NwbGl0X2J5X21pbiksIHR5cGU9ImIiLCB4bGFiPSJNaW51dGVzIiwgeWxhYj0iQXZlcmFnZSBHb2xkIERpZmYgKEJsdWUgLSBSZWQpIikKCmBgYAoKSW5zYW5lbHkgc2tld2VkIHRvd2FyZHMgYmx1ZSEgTm8gbmVnYXRpdmUgdmFsdWVzIChub25lIGluZGljYXRpbmcgcmVkIGhhZCBtb3JlIGdvbGQgdGhhbiBibHVlKSBhdCBhbGwuIERpZCBJIG1pc3Mgc29tZXRoaW5nPyAKCgpgYGB7cn0KdW5pcXVlKG1hdGNoZXMkYmx1ZVRvcENoYW1wKQp3aXRoKG1hdGNoZXMsIGNvcihhcy5udW1lcmljKG1hdGNoZXMkYmx1ZVRvcCksIGFzLm51bWVyaWMobWF0Y2hlcyRibHVlVG9wQ2hhbXApKSkKYGBgClRoZXJlIGFyZSA3NSBkaWZmZXJlbnQgY2hhbXBpb25zLiAKVGhlcmUgaXMgbm90IGEgc3Ryb25nIGNvcnJlbGF0aW9uIGJldHdlZW4gdGhlIHBsYXllciBhbmQgdGhlIGNoYW1waW9uIHRoYXQgdGhleSB1c2UgaW4gdGhlIG1hdGNoZXMuIAo=</div>
 
 
 
