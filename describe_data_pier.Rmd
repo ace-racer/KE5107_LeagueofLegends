@@ -3,11 +3,12 @@ title: "Describe Data - Pier"
 output: html_notebook
 ---
 
-Do we need to segregate the matches by type? 
-How does type influence the match gameplay? 
+> Do we need to segregate the matches by type?   
+> How does type influence the match gameplay? 
 
-golddiff is defined as goldblue - goldred, by the minute
-we can remove goldblue, goldred? Is the actual quantity significant? 
+golddiff is defined as goldblue - goldred, by the minute  
+
+> Can we can remove goldblue, goldred? Is the actual quantity significant? 
 
 ```{r}
 match_categories <- unique(matches$Type)
@@ -26,17 +27,17 @@ head(golddiff_split_by_min)
 ```
 ```{r}
 plot(colMeans(golddiff_split_by_min), type="b", xlab="Minutes", ylab="Average Gold Diff (Blue - Red)")
-
 ```
 
-Insanely skewed towards blue! No negative values (none indicating red had more gold than blue) at all. Did I miss something? 
+> Insanely skewed towards blue! No negative values (none indicating red had more gold than blue) at all. Did I miss something? 
 
+The following is an exercise using *only* TOP position data. 
 
 ```{r}
 unique(matches$blueTopChamp)
 with(matches, cor(as.numeric(matches$blueTop), as.numeric(matches$blueTopChamp)))
 ```
-There are 75 different champions. 
+There are 75 different champions used in the *top* position. 
 There is not a strong correlation between the player and the champion that they use in the matches. 
 ```{r}
 library(ggplot2)
@@ -44,6 +45,16 @@ t <- table(matches$blueTopChamp) # gets frequencies
 t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
 t_sorted_df = data.frame(t_sorted)
 names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
-ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Top 10 Champions") + theme(plot.title = element_text(hjust = 0.5))
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Top 10 Champions Used (Top Position)") + theme(plot.title = element_text(hjust = 0.5))
+
 ```
+Now the bottom 10 Champions. (least frequently used)
+```{r}
+t_sorted = sort(t, decreasing=FALSE)[1:11] # sorts and gets bottom 11
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Bottom 10 Champions Used (Top Position)") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+
 
