@@ -17,17 +17,141 @@ Section 3: other relations between variables (bi- and multivariate)
 > **Data source**: League of Legends competitive matches between 2015-2017. The matches include the NALCS, EULCS, LCK, LMS, and CBLoL leagues as well as the World Championship and Mid-Season Invitational tournaments. https://www.kaggle.com/chuckephron/leagueoflegends
 
 
+```r
+library(ggplot2)
+```
 
+```
+## Warning: package 'ggplot2' was built under R version 3.4.2
+```
+
+```r
+# library(bitops)
+library(tidyr)
+```
+
+```
+## Warning: package 'tidyr' was built under R version 3.4.3
+```
+
+```r
+# library(RCurl)
+# library(ggthemes)
+# library(foreign)
+# library(grid)
+# library(RColorBrewer)
+# library(gridExtra)
+# library(reshape2)
+library(stringr)
+```
+
+```
+## Warning: package 'stringr' was built under R version 3.4.2
+```
+
+```r
+# library(scales)
+library(dplyr)
+```
+
+```
+## Warning: package 'dplyr' was built under R version 3.4.2
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+```
+
+```
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
+# library(GGally)
+# library(memisc)
+# library(lattice)
+# library(MASS)
+```
+
+
+```r
+# Source: https://www.kaggle.com/chuckephron/leagueoflegends
+getwd()
+```
 
 ```
 ## [1] "C:/Users/User/Documents/KE5107_LeagueofLegends"
 ```
 
+```r
+# Tip: don't run seperately with load command.
+# PC:
+# setwd('C:/Users/Gebruiker 1/Dropbox/NUS/Data mining/leagueoflegends')
+# laptop:
+setwd('C:/Users/User/Dropbox/NUS/Data mining/leagueoflegends')
+
+# load data file
+matches <- read.csv("matches.csv", header=TRUE, sep=",")
+```
 
 
 
+```r
+# 0.3.1 cuberoot
+cuberoot_trans = function() trans_new('cuberoot', 
+                                      transform = function(x) x^(1/3), 
+                                      inverse = function(x) X^3)
+
+# 0.3.2 Define new column names: takes in the max number for column and a name, outputs multiple columns
+# Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
+create_column_names <- function(columns, namestring){
+  maxnr <- max(matches$columns)
+  vectofnr = c();
+  for (i in 1:81){
+    # print(i)
+    vectofnr[i] <- paste(namestring, as.character(i))
+    # print(vectofnr)
+  }
+  return(vectofnr)
+}
+# because it is so slow, maybe you can also put it in a global var:
+# listofcolumns <- create_column_names(gamelength)
+
+# 0.3.3 remove the first and last char
+remove_first_last <- function(inputstring){
+  return(substring(inputstring, 2, str_length(inputstring)-1))
+}
+```
 
 
+
+```r
+# 0.4.1 viewing & correcting types
+str(matches)
+# Types seem ok, but have to correct the lists.
+
+## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
+matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+
+## 0.4.3 get rid of [ & ] for later use --> only use once!
+matches$goldblue <- remove_first_last(matches$goldblue)
+matches$golddiff <- remove_first_last(matches$golddiff)
+matches$goldred <- remove_first_last(matches$goldred)
+
+
+## 0.4.4 Square the data if scewed 
+
+# to do
+```
 
 
 
@@ -442,9 +566,22 @@ Game length mean and median are very close: so it is not scewed.
 Most notable is the choice for Maokai for top red--> he is a lot more favorite for red than blue...
 
 
+```r
+# make a table of RG Case --> it is exactly the same, so that seems correct
+table(matches$winner)
+#it is exactly the same, so that seems correct
+```
 ## 1.2 First exploratory plots: length of the game and the different leagues, types & timeframes(seasons)
 
 How are the leagues distributed (univariate)?  
+
+```r
+qplot(x = League, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('blue'))
+```
+
 ![](LeagueofLegends_files/figure-html/1.2 First exploratory plots-1.png)<!-- -->
 A lot of variation, with clear distinction. The game should function the same across the leagues.
 

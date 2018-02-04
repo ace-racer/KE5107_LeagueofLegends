@@ -16,7 +16,7 @@ Section 3: other relations between variables (bi- and multivariate)
 
 > **Data source**: League of Legends competitive matches between 2015-2017. The matches include the NALCS, EULCS, LCK, LMS, and CBLoL leagues as well as the World Championship and Mid-Season Invitational tournaments. https://www.kaggle.com/chuckephron/leagueoflegends
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, "0.1 packages"}
+```{r "0.1 packages"}
 
 library(ggplot2)
 # library(bitops)
@@ -37,7 +37,7 @@ library(dplyr)
 # library(MASS)
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, "0.2 Load_the_Data"}
+```{r "0.2 Load_the_Data"}
 # Source: https://www.kaggle.com/chuckephron/leagueoflegends
 getwd()
 
@@ -52,7 +52,7 @@ matches <- read.csv("matches.csv", header=TRUE, sep=",")
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, "0.3 Functions"}
+```{r "0.3 Functions"}
 
 # 0.3.1 cuberoot
 cuberoot_trans = function() trans_new('cuberoot', 
@@ -82,7 +82,7 @@ remove_first_last <- function(inputstring){
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, results = "hide", "0.4 Data Wrangling"}
+```{r results = "hide", "0.4 Data Wrangling"}
 
 # 0.4.1 viewing & correcting types
 str(matches)
@@ -158,7 +158,7 @@ Game length mean and median are very close: so it is not scewed.
 
 Most notable is the choice for Maokai for top red--> he is a lot more favorite for red than blue...
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'}
+```{r results = 'hide'}
 # make a table of RG Case --> it is exactly the same, so that seems correct
 table(matches$winner)
 #it is exactly the same, so that seems correct
@@ -166,7 +166,7 @@ table(matches$winner)
 ## 1.2 First exploratory plots: length of the game and the different leagues, types & timeframes(seasons)
 
 How are the leagues distributed (univariate)?  
-```{r echo=FALSE, message=FALSE, warning=FALSE, "1.2 First exploratory plots"}
+```{r "1.2 First exploratory plots"}
 qplot(x = League, data = matches,
       xlab = 'league',
       ylab = 'Number of games from sample',
