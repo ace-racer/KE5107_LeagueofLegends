@@ -50,25 +50,23 @@ setwd('C:/Users/User/Dropbox/NUS/Data mining/leagueoflegends')
 # load data file
 matches <- read.csv("matches.csv", header=TRUE, sep=",")
 ```
-```{r echo=FALSE, message=FALSE, warning=FALSE, "0.3 Functions"}
-substrRight <- function(x, n){
-  substr(x, nchar(x)-n+1, nchar(x))
-}
 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, "0.3 Functions"}
+
+# 0.3.1 cuberoot
 cuberoot_trans = function() trans_new('cuberoot', 
                                       transform = function(x) x^(1/3), 
                                       inverse = function(x) X^3)
 
-
-
+# 0.3.2 Define new column names: takes in the max number for column and a name, outputs multiple columns
 # Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
-
-create_column_names <- function(columns){
+create_column_names <- function(columns, namestring){
   maxnr <- max(matches$columns)
   vectofnr = c();
   for (i in 1:81){
     # print(i)
-    vectofnr[i] <- paste("gold diff in minute", as.character(i))
+    vectofnr[i] <- paste(namestring, as.character(i))
     # print(vectofnr)
   }
   return(vectofnr)
@@ -76,6 +74,10 @@ create_column_names <- function(columns){
 # because it is so slow, maybe you can also put it in a global var:
 listofcolumns <- create_column_names(gamelength)
 
+# 0.3.3 remove the first and last char
+remove_first_last <- function(inputstring){
+  return(substring(inputstring, 2, str_length(inputstring)-1))
+}
 
 ```
 
@@ -89,10 +91,11 @@ str(matches)
 ## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
 matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
 
-## 0.4.3 prepare for making different columns out of each golddiff array with function
+## 0.4.3 get rid of [ & ] for later use --> only use once!
+matches$goldblue <- remove_first_last(matches$goldblue)
+matches$golddiff <- remove_first_last(matches$golddiff)
+matches$goldred <- remove_first_last(matches$goldred)
 
-# get rid of [ & ]
-matches$golddiff <- substring(matches$golddiff, 2, str_length(matches$golddiff)-1)
 
 ## 0.4.4 Square the data if scewed 
 
@@ -102,13 +105,25 @@ matches$golddiff <- substring(matches$golddiff, 2, str_length(matches$golddiff)-
 
 
 ```{r echo=FALSE, warning=FALSE, results = "hide", "0.5 New variables"}
+matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
 
-# It gets messy very easily so extra dataset
-matches_seperated <- matches %>%
-  separate(golddiff, into = c(create_column_names(gamelength)), sep = "\\,")
+# matches$YearSeason <- as.character(matches$Year)
+matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
+
+str(matches$YearSeason)
+summary(matches$Season)
+
+
+matches$YearSeason <- as.Date(matches$YearSeason, format = "%d/%m/%Y")
+
+summary(matches$YearSeason)
 ```
 
 ```{r echo=FALSE, warning=FALSE, results = "hide", "0.6 Making subsets"}
+# It gets messy very easily so extra dataset instead of extra variable:
+matches_seperated <- matches %>%
+  separate(golddiff, into = c(create_column_names(gamelength, "gold diff in minute")), sep = "\\,")
+
 # may be interesting to make a red vs blue won dataset.
 
 blueset <- subset(matches, winner == 'blue')
@@ -148,7 +163,39 @@ Most notable is the choice for Maokai for top red--> he is a lot more favorite f
 table(matches$winner)
 #it is exactly the same, so that seems correct
 ```
-## 1.2 First exploratory plots: length of the game
+## 1.2 First exploratory plots: length of the game and the different leagues, types & timeframes(seasons)
+
+How are the leagues distributed (univariate)?  
+```{r echo=FALSE, message=FALSE, warning=FALSE, "1.2 First exploratory plots"}
+qplot(x = League, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('blue'))
+```
+A lot of variation, with clear distinction. The game should function the same across the leagues.
+
+How are the types distributed (univariate)?  
+```{r echo=FALSE, message=FALSE, warning=FALSE, "1.2 First exploratory plots"}
+qplot(x = Type, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('yellow'))
+summary(matches$Type)
+```
+Huge difference between season and regional --> see if regional behaves differently, maybe exclude from sample
+
+How are the seasons distributed (univariate)?  
+```{r echo=FALSE, message=FALSE, warning=FALSE, "1.2 First exploratory plots"}
+qplot(x = Type, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('yellow'))
+summary(matches$Type)
+```
+
+
+
+
 
 How is the time distributed (univariate)?  
 ```{r echo=FALSE, message=FALSE, warning=FALSE, "1.2 First exploratory plots"}
@@ -159,6 +206,15 @@ qplot(x = gamelength, data = matches,
   scale_x_continuous()
 ```
 Like we saw from the summary, the data is nicely distributed. It is also clear that it is almost impossible to win this game in the first 20 minutes in the professional spfere.
+
+How are the matches distributed of the seasons (univariate)?  
+```{r echo=FALSE, message=FALSE, warning=FALSE, "1.2 First exploratory plots"}
+qplot(x = YearSeason, data = matches,
+      xlab = 'Season',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('purple'))
+```
+Wow, there is way more data from later timeslots...
 
 How is the time distributed over the different leagues (bivar)?
 
