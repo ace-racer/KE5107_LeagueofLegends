@@ -247,5 +247,49 @@ ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggti
 In blue winning matches, some champions like Bard, Teemo, Urgot are not used at all!  
 > One possible strategy is to avoid using these champions. 
 
+> Most popular player to ban by blue
+
+
+```r
+winning_matches <- matches[matches$bResult==1,]
+blue_bans = gsub("\\[|\\]", "", winning_matches$blueBans)
+blue_bans = do.call("rbind", strsplit(blue_bans, ",")) # remove the , 
+```
+
+```
+## Warning in rbind(c("'Rumble'", " 'Kassadin'", " 'Lissandra'"),
+## c("'JarvanIV'", : number of columns of result is not a multiple of vector
+## length (arg 1)
+```
+
+```r
+t1 <- sort(table(blue_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Blue Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+![](describe_data_pier_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+
+```r
+winning_matches <- matches[matches$rResult==1,]
+red_bans = gsub("\\[|\\]", "", winning_matches$redBans)
+red_bans = do.call("rbind", strsplit(red_bans, ",")) # remove the , 
+```
+
+```
+## Warning in rbind(c("'RekSai'", " 'Janna'", " 'Leblanc'"), c("'RekSai'", :
+## number of columns of result is not a multiple of vector length (arg 1)
+```
+
+```r
+t1 <- sort(table(red_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Red Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+![](describe_data_pier_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 
