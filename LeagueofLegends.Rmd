@@ -219,6 +219,8 @@ Wow, there is way more data from later timeslots...
 How is the time distributed over the different leagues (bivar)?
 
 ```{r}
-
+ggplot(aes(x = gamelength, y = YearSeason), data = matches) + 
+  geom_point(alpha = 1/6, color = 'red', position = position_jitter(h = 0)) +
+  xlim(16, 80) 
 ```
-
+Not much to see, the games are getting longer, but also much more data so no real conclusion to be made
