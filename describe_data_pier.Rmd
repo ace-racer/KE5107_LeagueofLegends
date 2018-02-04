@@ -38,3 +38,12 @@ with(matches, cor(as.numeric(matches$blueTop), as.numeric(matches$blueTopChamp))
 ```
 There are 75 different champions. 
 There is not a strong correlation between the player and the champion that they use in the matches. 
+```{r}
+library(ggplot2)
+t <- table(matches$blueTopChamp) # gets frequencies
+t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Top 10 Champions") + theme(plot.title = element_text(hjust = 0.5))
+```
+
