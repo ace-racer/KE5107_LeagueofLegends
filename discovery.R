@@ -1,4 +1,5 @@
 matches_data = read.csv("data/matches.csv")
+setDefaults("source",echo=FALSE)
 
 # Get the gold difference as a list of numbers - process the values by removing the [, ] brackets
 getGoldDiffAsListOfNumbers <- function(matchNumber){
@@ -53,7 +54,7 @@ for (matchNumber in 1:nrow(matches_data)) {
 }
 
 
-# The number of times the blue team won when the fraction of the game the blue team led in gold >= 0.5
+# The number of times the blue team won when the fraction of the game the blue team led in gold > 0.5
 timesBlueTeamWonAndLedInGold <- length(which(matches_data$bResult[matches_data$ratioBlueMoreGoldThanRed > 0.5] == 1))
 
 # total games blue team won
@@ -61,9 +62,21 @@ timesBlueTeamWon <- length(matches_data$bResult[matches_data$bResult == 1])
 
 probabilityBlueTeamWonWhenLeadingGold <- timesBlueTeamWonAndLedInGold/timesBlueTeamWon
 
-probabilityBlueTeamWonWhenLeadingGold
+print(paste("P(Blue team win and leads gold possession for majority of game)", probabilityBlueTeamWonWhenLeadingGold))
 
-# Outcome: 80% chance that blue team will win when they lead in possession of gold for mahority of the match
+# Outcome: 80% chance that blue team will win when they lead in possession of gold for majority of the match
+
+# The number of times the red team won when the fraction of the game the red team led in gold > 0.5
+timesRedTeamWonAndLedInGold <- length(which(matches_data$bResult[matches_data$ratioBlueMoreGoldThanRed < 0.5] == 0))
+
+# total games red team won
+timesRedTeamWon <- length(matches_data$bResult[matches_data$rResult == 1])
+
+probabilityRedTeamWonWhenLeadingGold <- timesRedTeamWonAndLedInGold/timesRedTeamWon
+
+
+print(paste("P(Red team win and leads gold possession for majority of game)", probabilityRedTeamWonWhenLeadingGold))
+# Outcome: 82% chance that red team will win when they lead in possession of gold for majority of the match
 
 #plotGoldDiffWithTimeInMatch(1)
 #plotGoldDiffWithTimeInMatch(234)
