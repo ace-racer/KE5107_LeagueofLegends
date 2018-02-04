@@ -1,7 +1,20 @@
 ---
 title: "League of Legends"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
+Research question: see dreamteam files
+========================================================
+#### Table of content (type of analysis)
+Section 0: preparing data (no results shown)  
+Section 1: exploring variables and relations (mostly univariate and some
+bivariate)
+Section 2: exploring differnces between results (won/vs lost) and control (bi- and multivariate)  
+Section 3: other relations between variables (bi- and multivariate)  
+
+
+> **Data source**: League of Legends competitive matches between 2015-2017. The matches include the NALCS, EULCS, LCK, LMS, and CBLoL leagues as well as the World Championship and Mid-Season Invitational tournaments. https://www.kaggle.com/chuckephron/leagueoflegends
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, "0.1 packages"}
 
@@ -24,7 +37,7 @@ library(lattice)
 library(MASS)
 ```
 
-```{r "0.2 Load_the_Data"}
+```{r echo=FALSE, message=FALSE, warning=FALSE, "0.2 Load_the_Data"}
 # Source: https://www.kaggle.com/chuckephron/leagueoflegends
 getwd()
 
@@ -60,54 +73,96 @@ create_column_names <- function(columns){
   }
   return(vectofnr)
 }
-# because it is so slow, maybe we can also put it in a global var:
+# because it is so slow, maybe you can also put it in a global var:
 listofcolumns <- create_column_names(gamelength)
 
-# nrofcolumn <- function(nrsofcolumn){
-#   while(nrofcolumn > 0){
-#     print(nrofcolumn);
-#     listofnr = c();
-#     listofnr <- as.character(nrofcolumn);
-#     print(listofnr);
-#     nrofcolumn <- nrofcolumn-1
-#   }
-#   return(listofnr)
-# }
-# 
-# nrofcolumn(3)
 
 ```
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, results = "hide", "0.4 Data Wrangling"}
 
-## 0.4.0 explore a bit
-
-# Get the names
-names(matches)
-# this runs a whole summary
-# summary(matches)
-summary(matches$bResult)
-# ---> so blue wins more
-
-
 # 0.4.1 viewing & correcting types
 str(matches)
-# So there are 185 teams --> seems like a lot? Do teams change from name?
+# Types seem ok, but have to correct the lists.
 
 ## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
 matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
 
-## 0.4.3 making different columns out of each golddiff array with function
+## 0.4.3 prepare for making different columns out of each golddiff array with function
 
 # get rid of [ & ]
 matches$golddiff <- substring(matches$golddiff, 2, str_length(matches$golddiff)-1)
 
-# It gets messy very easily so extra dataset
-matches2 <- matches %>%
-  separate(golddiff, into = c(create_column_names(gamelength)), sep = "\\,")
-
 ## 0.4.4 Square the data if scewed 
 
+# to do
 
 ```
+
+
+```{r echo=FALSE, warning=FALSE, results = "hide", "0.5 New variables"}
+
+# It gets messy very easily so extra dataset
+matches_seperated <- matches %>%
+  separate(golddiff, into = c(create_column_names(gamelength)), sep = "\\,")
+```
+
+```{r echo=FALSE, warning=FALSE, results = "hide", "0.6 Making subsets"}
+# may be interesting to make a red vs blue won dataset.
+
+blueset <- subset(matches, winner == 'blue')
+redset <- subset(matches, winner == 'red')
+```
+
+# 1. EXPLORING THE DATA SET (univariate and some bivariate).
+
+## 1.1 First exploratory plots (see below graph for analysis)
+
+```{r}
+# Get the names
+names(matches)
+# 58 original vars
+
+str(matches)
+# So there are 185 teams --> seems like a lot? Do teams change from name? Do members change?
+
+# this runs a whole summary (lot of work):
+summary(matches)
+
+table(matches$winner)
+# ---> so blue wins (a lot) more
+```
+
+Observations:
+Regional competition is very small: 143... exclude those if they behave very differently
+
+There are two seasons, so we seem to have Year*Season = 4*2=8 time values
+
+Game length mean and median are very close: so it is not scewed.
+
+Most notable is the choice for Maokai for top red--> he is a lot more favorite for red than blue...
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'}
+# make a table of RG Case --> it is exactly the same, so that seems correct
+table(matches$winner)
+#it is exactly the same, so that seems correct
+```
+## 1.2 First exploratory plots: length of the game
+
+How is the time distributed (univariate)?  
+```{r echo=FALSE, message=FALSE, warning=FALSE, "1.2 First exploratory plots"}
+qplot(x = gamelength, data = matches,
+      xlab = 'length of game',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('purple')) +
+  scale_x_continuous()
+```
+Like we saw from the summary, the data is nicely distributed. It is also clear that it is almost impossible to win this game in the first 20 minutes in the professional spfere.
+
+How is the time distributed over the different leagues (bivar)?
+
+```{r}
+
+```
+
