@@ -20,16 +20,25 @@ print(length(match_categories))
 ```
 ```{r}
 # extract just golddiff for analysis
-just_gold_diff = gsub("\\[|\\]", "", matches$golddiff)
+blue_loss_matches <- matches[matches$bResult==0,]
+just_gold_diff = gsub("\\[|\\]", "", blue_loss_matches$golddiff)
 golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
 golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
 head(golddiff_split_by_min)
-```
-```{r}
-plot(colMeans(golddiff_split_by_min), type="b", xlab="Minutes", ylab="Average Gold Diff (Blue - Red)")
+plot(colMeans(golddiff_split_by_min), type="b", xlab="Minutes", ylab="Average Gold Diff (Blue - Red) for blue losing matches") 
 ```
 
-> Insanely skewed towards blue! No negative values (none indicating red had more gold than blue) at all. Did I miss something? 
+
+```{r}
+blue_win_matches <- matches[matches$bResult==1,]
+just_gold_diff = gsub("\\[|\\]", "", blue_win_matches$golddiff)
+golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
+golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
+head(golddiff_split_by_min)
+plot(colMeans(golddiff_split_by_min), type="b", xlab="Minutes", ylab="Average Gold Diff (Blue - Red) for blue winning matches") 
+```
+This graph is almost an inversion of the one before -> leading one to believe that gold amassed is directly correlated to winning. 
+
 
 The following is an exercise using *only* TOP position data. 
 
