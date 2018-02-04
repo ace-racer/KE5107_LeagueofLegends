@@ -25,5 +25,16 @@ paste("Number of red results: ", rResultsLength)
 #length(matches_data[xor(matches_data$bResult, matches_data$rResult) == FALSE, ])
 
 #length(matches_data[(matches_data$bResult) | (matches_data$rResult), ])
-length(matches_data)
+#length(matches_data)
+
+
+golddiffStr <- as.character(matches_data$golddiff)
+golddiffs <- as.numeric(strsplit(golddiffStr, ','))
+golddiffs[1]
+
+
+
+
+
+
 ```
