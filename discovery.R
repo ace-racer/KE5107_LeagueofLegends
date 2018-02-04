@@ -45,6 +45,14 @@ plotGoldDiffWithTimeInMatch <- function(matchNumber){
 
 
 
+for (matchNumber in 1:nrow(matches_data)) {
+  golddiffNumericList <- getGoldDiffAsListOfNumbers(matchNumber)
+  timesBlueWithMoreGoldThanRed <- length(which(golddiffNumericList > 0))
+  matchLength <- length(golddiffNumericList)
+  didBlueWin = matches_data[matchNumber, c("bResult")]
+  print(paste(matchNumber, timesBlueWithMoreGoldThanRed/matchLength, didBlueWin))
+}
+
 #plotGoldDiffWithTimeInMatch(1)
-plotGoldDiffWithTimeInMatch(234)
+#plotGoldDiffWithTimeInMatch(234)
 #plotGoldDiffWithTimeInMatch(3)
