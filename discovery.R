@@ -1,8 +1,9 @@
+
+
+
 matches_data = read.csv("data/matches.csv")
 
-
-
-plotGoldDiffWithTimeInMatch <- function(matchNumber){
+getGoldDiffAsListOfNumbers <- function(matchNumber){
   # get the characters from the first row of the matches data and the golddiff column
   golddiffStr <- as.character(matches_data[matchNumber, c("golddiff")])
   
@@ -25,6 +26,15 @@ plotGoldDiffWithTimeInMatch <- function(matchNumber){
   # Convert values to numeric
   golddiffNumericList <- as.numeric(as.character(golddiffListValues))
   
+  # return the list obtained
+  golddiffNumericList
+}
+
+plotGoldDiffWithTimeInMatch <- function(matchNumber){
+  golddiffNumericList <- getGoldDiffAsListOfNumbers(matchNumber)
+  
+  playLength <- length(golddiffNumericList)
+  
   # get the maximum amount of gold diff in the match
   max(golddiffNumericList)
   time <- seq(1, playLength)
@@ -33,6 +43,8 @@ plotGoldDiffWithTimeInMatch <- function(matchNumber){
   plot(time, golddiffNumericList, xlab="Time in the game", ylab="Gold difference")
 }
 
-plotGoldDiffWithTimeInMatch(1)
-plotGoldDiffWithTimeInMatch(2)
-plotGoldDiffWithTimeInMatch(3)
+
+
+#plotGoldDiffWithTimeInMatch(1)
+plotGoldDiffWithTimeInMatch(234)
+#plotGoldDiffWithTimeInMatch(3)
