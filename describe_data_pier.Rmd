@@ -4,7 +4,7 @@ output:
   html_document:
     keep_md: true
 ---
-
+test
 > Do we need to segregate the matches by type?   
 > How does type influence the match gameplay? 
 
@@ -31,7 +31,7 @@ just_gold_diff = gsub("\\[|\\]", "", blue_loss_matches$golddiff)
 golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
 golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
 head(golddiff_split_by_min)
-plot(colMeans(golddiff_split_by_min), type="b", xlab="Minutes", ylab="Average Gold Diff (Blue - Red) for blue losing matches") 
+plot(colMeans(golddiff_split_by_min), type="l", xlab="Minutes", ylab="Average Gold Diff (Blue - Red) for blue losing matches") 
 ```
 
 
@@ -41,7 +41,7 @@ just_gold_diff = gsub("\\[|\\]", "", blue_win_matches$golddiff)
 golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
 golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
 head(golddiff_split_by_min)
-plot(colMeans(golddiff_split_by_min), type="b", xlab="Minutes", ylab="Average Gold Diff (Blue - Red) for blue winning matches") 
+plot(colMeans(golddiff_split_by_min), type="l", xlab="Minutes", ylab="Average Gold Diff (Blue - Red) for blue winning matches") 
 ```
 This graph is almost an inversion of the one before -> leading one to believe that gold amassed is directly correlated to winning. 
 
