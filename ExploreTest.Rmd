@@ -1,0 +1,70 @@
+---
+title: "ExploreData"
+author: "Ryan"
+date: "February 8, 2018"
+output: html_document
+---
+```{r}
+
+```
+
+
+```{r}
+matches <- read.csv("LeagueofLegends.csv")
+
+match_categories <- unique(matches$Type)
+print(match_categories)
+print(length(match_categories))
+```
+
+```{r}
+?gsub
+?do.call
+?apply
+```
+
+
+```{r}
+blue_loss_matches <- matches[matches$bResult==0,]
+
+#just_gold_diff = gsub("\\[|\\]", "", blue_loss_matches$golddiff)
+#golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
+#golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
+
+blue_gold_total = gsub("\\[|\\]", "", blue_loss_matches$goldblue)
+blue_gold_total_by_min = do.call("rbind", strsplit(blue_gold_total, ",")) # remove the , 
+blue_gold_total_by_min = data.frame(apply(blue_gold_total_by_min, 2, as.numeric)) # convert str to num
+
+blue_ADC_gold = gsub("\\[|\\]", "", blue_loss_matches$goldblueADC)
+blue_ADC_gold_by_min = do.call("rbind", strsplit(blue_ADC_gold, ",")) # remove the , 
+blue_ADC_gold_by_min = data.frame(apply(blue_ADC_gold_by_min, 2, as.numeric)) # convert str to num
+
+#percentage of ADC gold to team gold
+percentage_loser_ADC = (blue_ADC_gold_by_min/blue_gold_total_by_min)*100
+plot(colMeans(percentage_loser_ADC), type="l", xlab="Minutes", ylab="ADC") 
+
+
+```
+
+
+
+```{r}
+blue_win_matches <- matches[matches$bResult==1,]
+
+#just_gold_diff = gsub("\\[|\\]", "", blue_loss_matches$golddiff)
+#golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
+#golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
+
+blue_gold_total = gsub("\\[|\\]", "", blue_win_matches$goldblue)
+blue_gold_total_by_min = do.call("rbind", strsplit(blue_gold_total, ",")) # remove the , 
+blue_gold_total_by_min = data.frame(apply(blue_gold_total_by_min, 2, as.numeric)) # convert str to num
+
+blue_ADC_gold = gsub("\\[|\\]", "", blue_win_matches$goldblueADC)
+blue_ADC_gold_by_min = do.call("rbind", strsplit(blue_ADC_gold, ",")) # remove the , 
+blue_ADC_gold_by_min = data.frame(apply(blue_ADC_gold_by_min, 2, as.numeric)) # convert str to num
+
+#percentage of ADC gold to team gold
+percentage_loser_ADC = (blue_ADC_gold_by_min/blue_gold_total_by_min)*100
+plot(colMeans(percentage_loser_ADC), type="l", xlab="Minutes", ylab="ADC") 
+```
+
