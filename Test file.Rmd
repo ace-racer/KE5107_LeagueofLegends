@@ -1,0 +1,461 @@
+---
+title: "Explore"
+author: "Ryan"
+date: "February 8, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+---
+title: "League of Legends"
+output:
+  html_document:
+    keep_md: true
+---
+Research question: see dreamteam files
+========================================================
+#### Table of content (type of analysis)
+Section 0: preparing data (no results shown)  
+Section 1: exploring variables and relations (mostly univariate and some
+bivariate)  
+Section 2: exploring differnces between results (won/vs lost) and control (bi- and multivariate)  
+Section 3: other relations between variables (bi- and multivariate)  
+Section 4: Further exploratory analysis to understand game dynamics
+
+> **Data source**: League of Legends competitive matches between 2015-2017. The matches include the NALCS, EULCS, LCK, LMS, and CBLoL leagues as well as the World Championship and Mid-Season Invitational tournaments. https://www.kaggle.com/chuckephron/leagueoflegends
+
+```{r "0.1 packages"}
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(dplyr)
+
+```
+
+
+
+```{r "0.3 Functions"}
+
+# 0.3.1 cuberoot
+cuberoot_trans = function() trans_new('cuberoot', 
+                                      transform = function(x) x^(1/3), 
+                                      inverse = function(x) X^3)
+
+# 0.3.2 Define new column names: takes in the max number for column and a name, outputs multiple columns
+# Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
+create_column_names <- function(columns, namestring){
+  maxnr <- max(matches$columns)
+  vectofnr = c();
+  for (i in 1:81){
+    # print(i)
+    vectofnr[i] <- paste(namestring, as.character(i))
+    # print(vectofnr)
+  }
+  return(vectofnr)
+}
+# because it is so slow, maybe you can also put it in a global var:
+# listofcolumns <- create_column_names(gamelength)
+
+# 0.3.3 remove the first and last char
+remove_first_last <- function(inputstring){
+  return(substring(inputstring, 2, str_length(inputstring)-1))
+}
+
+```
+
+```{r}
+?fucntion
+```
+
+
+
+```{r "0.4 Data Wrangling"}
+
+# 0.4.1 viewing & correcting types
+str(matches)
+# Types seem ok, but have to correct the lists.
+
+## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
+matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+
+## 0.4.3 get rid of [ & ] for later use --> only use once!
+matches$goldblue <- remove_first_last(matches$goldblue)
+matches$golddiff <- remove_first_last(matches$golddiff)
+matches$goldred <- remove_first_last(matches$goldred)
+
+
+## 0.4.4 Square the data if scewed 
+
+# to do
+
+```
+
+
+```{r "0.5 New variables"}
+matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+
+# matches$YearSeason <- as.character(matches$Year)
+matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
+
+str(matches$YearSeason)
+summary(matches$Season)
+
+
+matches$YearSeason <- as.Date(matches$YearSeason, format = "%d/%m/%Y")
+
+summary(matches$YearSeason)
+```
+
+```{r "0.6 Making subsets"}
+# It gets messy very easily so extra dataset instead of extra variable:
+matches_seperated <- matches %>%
+  separate(golddiff, into = c(create_column_names(gamelength, "gold diff in minute")), sep = "\\,")
+
+# may be interesting to make a red vs blue won dataset.
+
+blueset <- subset(matches, winner == 'blue')
+redset <- subset(matches, winner == 'red')
+```
+
+# 1. EXPLORING THE DATA SET (univariate and some bivariate).
+
+## 1.1 First exploratory plots (see below graph for analysis)
+
+```{r}
+# Get the names
+names(matches)
+# 58 original vars
+
+str(matches)
+# So there are 185 teams --> seems like a lot? Do teams change from name? Do members change?
+
+# this runs a whole summary (lot of work):
+summary(matches)
+
+table(matches$winner)
+# ---> so blue wins (a lot) more
+```
+
+Observations:
+Regional competition is very small: 143... exclude those if they behave very differently
+
+There are two seasons, so we seem to have Year*Season = 4*2=8 time values
+
+Game length mean and median are very close: so it is not scewed.
+
+Most notable is the choice for Maokai for top red--> he is a lot more favorite for red than blue...
+
+```{r results = 'hide'}
+# make a table of RG Case --> it is exactly the same, so that seems correct
+table(matches$winner)
+#it is exactly the same, so that seems correct
+```
+## 1.2 First exploratory plots: length of the game and the different leagues, types & timeframes(seasons)
+
+How are the leagues distributed (univariate)?  
+```{r "1.2 First exploratory plots"}
+qplot(x = League, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('blue'))
+```
+A lot of variation, with clear distinction. The game should function the same across the leagues.
+
+How are the types distributed (univariate)?  
+```{r}
+qplot(x = Type, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('yellow'))
+summary(matches$Type)
+```
+Huge difference between season and regional --> see if regional behaves differently, maybe exclude from sample
+
+How are the seasons distributed (univariate)?  
+```{r}
+qplot(x = Type, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('yellow'))
+summary(matches$Type)
+```
+
+
+
+
+
+How is the time distributed (univariate)?  
+```{r}
+qplot(x = gamelength, data = matches,
+      xlab = 'length of game',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('purple')) +
+  scale_x_continuous()
+```
+Like we saw from the summary, the data is nicely distributed. It is also clear that it is almost impossible to win this game in the first 20 minutes in the professional spfere.
+
+How are the matches distributed of the seasons (univariate)?  
+```{r}
+qplot(x = YearSeason, data = matches,
+      xlab = 'Season',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('purple'))
+```
+Wow, there is way more data from later timeslots...
+
+How is the time distributed over the different leagues (bivar)?
+
+```{r}
+ggplot(aes(x = gamelength, y = YearSeason), data = matches) + 
+  geom_point(alpha = 1/6, color = 'red', position = position_jitter(h = 0)) +
+  xlim(16, 80) 
+```
+Not much to see, the games are getting longer, but also much more data so no real conclusion to be made
+```{r}
+theme_set(theme_minimal(20))
+set.seed(1836)
+names(matches_seperated)
+golddiff_subset <- matches_seperated[,c("gold diff in minute 1",  "gold diff in minute 2",  "gold diff in minute 3", 
+ "gold diff in minute 4",  "gold diff in minute 5",  "gold diff in minute 6",  "gold diff in minute 7", 
+ "gold diff in minute 8",  "gold diff in minute 9",  "gold diff in minute 10", "gold diff in minute 11",
+ "gold diff in minute 12", "gold diff in minute 13", "gold diff in minute 14", "gold diff in minute 15",
+ "gold diff in minute 16", "gold diff in minute 17", "gold diff in minute 18", "gold diff in minute 19",
+ "gold diff in minute 20")]
+# summary(gam_subset)
+# ggpairs(gam_subset[sample.int(nrow(gam_subset), 1000),]) +
+#   theme(
+#     axis.text = element_text(size = 3),
+#     axis.title = element_text(size = 2),
+#     legend.background = element_rect(fill = "white"),
+#     panel.grid.major = element_line(colour = NA),
+#     panel.grid.minor = element_blank(),
+#     panel.background = element_rect(fill = "grey95"))
+
+# gam_subset2 <- gam[,c("RG_case", 
+#                       "age_at_registration",
+#                       "frequency_fixedodds",
+#                       "bets_per_day_fixedodds",
+#                       "euros_per_bet_fixedodds",
+#                       "net_loss_fixedodds",
+#                       "percent_lost_fixedodds",
+#                       "all_bets",
+#                       "all_stakes",
+#                       "Registration_Date_Year.bucket",
+#                       "Registration_Date_Year.largebucket")]
+# # ggpairs(gam_subset[sample.int(nrow(gam_subset), 1000),]) +
+# #   theme(
+# #     axis.text = element_text(size = 3),
+# #     axis.title = element_text(size = 2),
+# #     legend.background = element_rect(fill = "white"),
+# #     panel.grid.major = element_line(colour = NA),
+# #     panel.grid.minor = element_blank(),
+# #     panel.background = element_rect(fill = "grey95"))
+# 
+# # only numerical:
+# 
+# gam_subset3 <- gam[,c("age_at_registration",
+#                       "frequency_fixedodds",
+#                       "bets_per_day_fixedodds",
+#                       "euros_per_bet_fixedodds",
+#                       "net_loss_fixedodds",
+#                       "percent_lost_fixedodds",
+#                       "all_bets",
+#                       "all_stakes",
+#                       "Registration_Date_Year.bucket",
+#                       "Registration_Date_Year.largebucket",
+#                       "Missing_Daily_Transactions",
+#                       "First_Deposit_Date",
+#                       "Registration_date",
+#                       "sum_stakes_fixedodds", 
+#                       "bettingdays_fixedodds",
+#                       "duration_fixedodds")]
+
+
+## Multiple t-tests for time, age, frail between genders.
+lapply(gam[,c("bettingdays_fixedodds", "sum_stakes_fixedodds", "bets_per_day_fixedodds")], function(x) t.test(x ~ gam$RG_case))
+
+ggcorr(golddiff_subset[sample.int(nrow(golddiff_subset), 1000),])
+```
+Exploring top 10 champions used in the top position 
+```{r}
+library(ggplot2)
+blue_win_matches = matches[matches$bResult==1,]
+t <- table(blue_win_matches$blueTopChamp) # gets frequencies
+t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Top 10 Champions Used (Top Position)") + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+Now 10 least frequently used champions in the top position. 
+
+```{r}
+t_sorted = sort(t, decreasing=FALSE)[1:12] # sorts and gets bottom 11
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Bottom 10 Champions Used (Top Position)") + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+An observation is that for matches where blue wins, some champions like Bard, Teemo, Urgot are not used at all! Possible strategy: Avoid using these champions in the top position. 
+
+Now to observe the most popular champion that blue bans when they win:
+
+```{r}
+winning_matches <- matches[matches$bResult==1,]
+blue_bans = gsub("\\[|\\]", "", winning_matches$blueBans)
+blue_bans = do.call("rbind", strsplit(blue_bans, ",")) # remove the , 
+t1 <- sort(table(blue_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Blue Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+Now to observe the most popular champion that red bans when they win:
+```{r}
+winning_matches <- matches[matches$rResult==1,]
+red_bans = gsub("\\[|\\]", "", winning_matches$redBans)
+red_bans = do.call("rbind", strsplit(red_bans, ",")) # remove the , 
+t1 <- sort(table(red_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Red Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+In the game, blue gets to ban a champion first, then red. So blue bans Leblanc most of the time. After which Red bans Zac most of the time. 
+Possible strategy formulated here for banning champions in order to win. 
+
+## 4  Further exploratory analysis to understand game dynamics
+
+### 4.1 Does having more gold than your opponent for a longer period have an influence on the game outcome?
+```{r}
+
+matches_data = read.csv("data/matches.csv")
+
+
+# Get the gold difference as a list of numbers - process the values by removing the [, ] brackets
+getGoldDiffAsListOfNumbers <- function(matchNumber){
+  # get the characters from the first row of the matches data and the golddiff column
+  golddiffStr <- as.character(matches_data[matchNumber, c("golddiff")])
+  
+  # split the value by the comma
+  golddiffList <- strsplit(golddiffStr,", ")
+  
+  # get the length of the number of entries in the gold difference list
+  playLength <- length(golddiffList[[1]])
+  
+  # get the numbers equivalent to the elements
+  golddiffListValues <- golddiffList[[1]]
+  
+  # replace [ with empty
+  golddiffListValues[1] <- gsub("\\[", "", golddiffListValues[1])
+  
+  # replace ] with empty
+  golddiffListValues[playLength] <- gsub("]", "", golddiffListValues[playLength])
+  golddiffListValues[playLength] 
+  
+  # Convert values to numeric
+  golddiffNumericList <- as.numeric(as.character(golddiffListValues))
+  
+  # return the list obtained
+  golddiffNumericList
+}
+
+for (matchNumber in 1:nrow(matches_data)) {
+  golddiffNumericList <- getGoldDiffAsListOfNumbers(matchNumber)
+  timesBlueWithMoreGoldThanRed <- length(which(golddiffNumericList > 0))
+  matchLength <- length(golddiffNumericList)
+  
+  # fraction of the game where blue team was leading in gold
+  matches_data$ratioBlueMoreGoldThanRed[matchNumber] <- timesBlueWithMoreGoldThanRed/matchLength
+}
+
+timesBlueTeamWonForRatio = list()
+timesBlueTeamLoseForRatio = list()
+
+for (i in 1:10){
+  ratioOfMatchBlueLedInGold <- 0.1 * i
+  timesBlueTeamWonForRatio[i] <- length(which(matches_data$bResult[matches_data$ratioBlueMoreGoldThanRed > (ratioOfMatchBlueLedInGold - 0.1) & matches_data$ratioBlueMoreGoldThanRed <= ratioOfMatchBlueLedInGold] == 1))
+  timesBlueTeamLoseForRatio[i] <- length(which(matches_data$bResult[matches_data$ratioBlueMoreGoldThanRed > (ratioOfMatchBlueLedInGold - 0.1) & matches_data$ratioBlueMoreGoldThanRed <= ratioOfMatchBlueLedInGold] == 0))
+}
+
+# scatter plot of the 2 different values
+xValues <- seq(10, 100, by = 10)
+plot(xValues, timesBlueTeamWonForRatio, type="p", main="Advantage in gold possession with winning", xlab="Percent of total match Blue team had more gold than Red team", ylab="Number of matches won", col="blue")
+par(new = TRUE)
+plot(xValues, timesBlueTeamLoseForRatio, type="p", col="red", axes = FALSE, xlab="", ylab="")
+axis(1, at = xValues)
+legend("top", legend = c("Matches won by Blue team", "Matches won by Red team"), col = c("blue", "red"), cex = 0.8, pch=1)
+
+
+
+```
+
+### 4.3 Which are the top champs in the various parts of the map?
+
+```{r}
+matches_data = read.csv("data/matches.csv")
+
+appendChamp <- function(p){
+  paste(p, "Champ", sep="")
+}
+
+prependRed <- function(p){
+  paste("red", p, sep="")
+}
+
+prependBlue <- function(p){
+  paste("blue", p, sep="")
+}
+
+getTopChampsForPosition <- function(champNames, n, columnName){
+  print(paste("Location: ", columnName))
+  topChamps <- sort(table(champNames), decreasing = TRUE)
+  topChampsAtPositions <- head(topChamps, n)
+  print(topChampsAtPositions)
+}
+
+mapPositions <- c("Top", "Jungle", "Middle", "ADC", "Support")
+mapPositions <- lapply(mapPositions, appendChamp)
+
+
+blueChampPositions <- lapply(mapPositions, prependBlue)
+redChampPositions <- lapply(mapPositions, prependRed)
+
+
+allChampPositionColumnNames <- c(blueChampPositions, redChampPositions)
+
+allChampsAtPositions <- matches_data[, unlist(allChampPositionColumnNames)]
+
+for(i in 1:length(allChampPositionColumnNames))
+{
+  cname <- unlist(allChampPositionColumnNames[i])
+  topChampsPosition <- getTopChampsForPosition(allChampsAtPositions[,cname], 5, cname)
+}
+
+```
