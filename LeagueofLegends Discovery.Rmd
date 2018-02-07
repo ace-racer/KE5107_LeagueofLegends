@@ -263,7 +263,7 @@ lapply(gam[,c("bettingdays_fixedodds", "sum_stakes_fixedodds", "bets_per_day_fix
 
 ggcorr(golddiff_subset[sample.int(nrow(golddiff_subset), 1000),])
 ```
-
+Exploring top 10 champions used in the top position 
 ```{r}
 library(ggplot2)
 blue_win_matches = matches[matches$bResult==1,]
