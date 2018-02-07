@@ -263,6 +263,56 @@ lapply(gam[,c("bettingdays_fixedodds", "sum_stakes_fixedodds", "bets_per_day_fix
 
 ggcorr(golddiff_subset[sample.int(nrow(golddiff_subset), 1000),])
 ```
+
+```{r}
+library(ggplot2)
+blue_win_matches = matches[matches$bResult==1,]
+t <- table(blue_win_matches$blueTopChamp) # gets frequencies
+t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Top 10 Champions Used (Top Position)") + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+Now 10 least frequently used champions in the top position. 
+
+```{r}
+t_sorted = sort(t, decreasing=FALSE)[1:12] # sorts and gets bottom 11
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Bottom 10 Champions Used (Top Position)") + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+An observation is that for matches where blue wins, some champions like Bard, Teemo, Urgot are not used at all! Possible strategy: Avoid using these champions in the top position. 
+
+Now to observe the most popular champion that blue bans when they win:
+
+```{r}
+winning_matches <- matches[matches$bResult==1,]
+blue_bans = gsub("\\[|\\]", "", winning_matches$blueBans)
+blue_bans = do.call("rbind", strsplit(blue_bans, ",")) # remove the , 
+t1 <- sort(table(blue_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Blue Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+Now to observe the most popular champion that red bans when they win:
+```{r}
+winning_matches <- matches[matches$rResult==1,]
+red_bans = gsub("\\[|\\]", "", winning_matches$redBans)
+red_bans = do.call("rbind", strsplit(red_bans, ",")) # remove the , 
+t1 <- sort(table(red_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Red Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+In the game, blue gets to ban a champion first, then red. So blue bans Leblanc most of the time. After which Red bans Zac most of the time. 
+Possible strategy formulated here for banning champions in order to win. 
+
 ## 4  Further exploratory analysis to understand game dynamics
 
 ### 4.1 Does having more gold than your opponent for a longer period have an influence on the game outcome?
