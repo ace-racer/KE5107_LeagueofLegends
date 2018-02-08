@@ -18,6 +18,7 @@ Section 3: other relations between variables (bi- and multivariate)
 
 ```{r "0.1 packages"}
 
+library(taRifx)
 library(ggplot2)
 # library(bitops)
 library(tidyr)
@@ -31,7 +32,7 @@ library(tidyr)
 library(stringr)
 # library(scales)
 library(dplyr)
-# library(GGally)
+library(GGally)
 # library(memisc)
 # library(lattice)
 # library(MASS)
@@ -66,13 +67,15 @@ create_column_names <- function(columns, namestring){
   vectofnr = c();
   for (i in 1:81){
     # print(i)
-    vectofnr[i] <- paste(namestring, as.character(i))
+    vectofnr[i] <- paste(namestring, as.character(i), sep="_")
     # print(vectofnr)
   }
   return(vectofnr)
 }
+
+ 
 # because it is so slow, maybe you can also put it in a global var:
-# listofcolumns <- create_column_names(gamelength)
+# listofcolumns <- create_column_names(gamelength, 'gold')
 
 # 0.3.3 remove the first and last char
 remove_first_last <- function(inputstring){
@@ -82,11 +85,11 @@ remove_first_last <- function(inputstring){
 ```
 
 
-```{r results = "hide", "0.4 Data Wrangling"}
+```{r "0.4 Data Wrangling"}
 
 # 0.4.1 viewing & correcting types
 str(matches)
-# Types seem ok, but have to correct the lists.
+# Types seem ok, but have to correct the adjusted variables.
 
 ## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
 matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
@@ -104,10 +107,11 @@ matches$goldred <- remove_first_last(matches$goldred)
 ```
 
 
-```{r echo=FALSE, warning=FALSE, results = "hide", "0.5 New variables"}
+```{r "0.5 New variables"}
+# make a better match variable for easy reading.
 matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
 
-# matches$YearSeason <- as.character(matches$Year)
+# make a better time variable out of year and season
 matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
 
 str(matches$YearSeason)
@@ -119,10 +123,15 @@ matches$YearSeason <- as.Date(matches$YearSeason, format = "%d/%m/%Y")
 summary(matches$YearSeason)
 ```
 
-```{r echo=FALSE, warning=FALSE, results = "hide", "0.6 Making subsets"}
+```{r "0.6 Making subsets"}
 # It gets messy very easily so extra dataset instead of extra variable:
 matches_seperated <- matches %>%
-  separate(golddiff, into = c(create_column_names(gamelength, "gold diff in minute")), sep = "\\,")
+  separate(as.numeric(golddiff), into = c(create_column_names(gamelength, "gold_diff_in_minute")), sep = "\\,")
+
+# Make them numeric
+matches_seperated <- japply(matches_seperated, c(create_column_names(gamelength, "gold_diff_in_minute")), as.numeric )
+# Hooray it works:
+str(matches_seperated$gold_diff_in_minute_80)
 
 # may be interesting to make a red vs blue won dataset.
 
@@ -158,11 +167,6 @@ Game length mean and median are very close: so it is not scewed.
 
 Most notable is the choice for Maokai for top red--> he is a lot more favorite for red than blue...
 
-```{r results = 'hide'}
-# make a table of RG Case --> it is exactly the same, so that seems correct
-table(matches$winner)
-#it is exactly the same, so that seems correct
-```
 ## 1.2 First exploratory plots: length of the game and the different leagues, types & timeframes(seasons)
 
 How are the leagues distributed (univariate)?  
@@ -175,7 +179,7 @@ qplot(x = League, data = matches,
 A lot of variation, with clear distinction. The game should function the same across the leagues.
 
 How are the types distributed (univariate)?  
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r }
 qplot(x = Type, data = matches,
       xlab = 'league',
       ylab = 'Number of games from sample',
@@ -185,7 +189,7 @@ summary(matches$Type)
 Huge difference between season and regional --> see if regional behaves differently, maybe exclude from sample
 
 How are the seasons distributed (univariate)?  
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r }
 qplot(x = Type, data = matches,
       xlab = 'league',
       ylab = 'Number of games from sample',
@@ -198,7 +202,7 @@ summary(matches$Type)
 
 
 How is the time distributed (univariate)?  
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r}
 qplot(x = gamelength, data = matches,
       xlab = 'length of game',
       ylab = 'Number of games from sample',
@@ -208,7 +212,7 @@ qplot(x = gamelength, data = matches,
 Like we saw from the summary, the data is nicely distributed. It is also clear that it is almost impossible to win this game in the first 20 minutes in the professional spfere.
 
 How are the matches distributed of the seasons (univariate)?  
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r}
 qplot(x = YearSeason, data = matches,
       xlab = 'Season',
       ylab = 'Number of games from sample',
@@ -224,3 +228,65 @@ ggplot(aes(x = gamelength, y = YearSeason), data = matches) +
   xlim(16, 80) 
 ```
 Not much to see, the games are getting longer, but also much more data so no real conclusion to be made
+
+# 2. HOW DO WINNING TEAMS DIFFER FROM LOSERS?
+
+
+## 2.1 first exploration
+
+All fixed odds + handy created variables. countryname & languagename were not
+allowed (too many variables), and done twice to keep overview. RG and Reg. date
+in both sets. Most interested in how RG cases compare, so it is handy to keep
+those on the first line.
+
+```{r "explore the correlations"}
+
+matches_seperated$gold_diff_in_minute_1 <- as.numeric(matches_seperated$gold_diff_in_minute_1)
+
+set.seed(1836)
+
+## Multiple t-tests for golddiff in xth minute.
+lapply(matches_seperated[,c("gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3","gold_diff_in_minute_4", "gold_diff_in_minute_5", "gold_diff_in_minute_6", "gold_diff_in_minute_7", "gold_diff_in_minute_8", "gold_diff_in_minute_9", "gold_diff_in_minute_10","gold_diff_in_minute_11","gold_diff_in_minute_12","gold_diff_in_minute_13","gold_diff_in_minute_14","gold_diff_in_minute_15")], function(x) t.test(x ~ matches_seperated$rResult))
+# Wow already in the second minute we can see that the gold difference is a significant predictor for winning or losing! 
+
+# make a subset
+match_subset <- matches_seperated[,c("rResult", "gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3","gold_diff_in_minute_4", "gold_diff_in_minute_5", "gold_diff_in_minute_6", "gold_diff_in_minute_7", "gold_diff_in_minute_8", "gold_diff_in_minute_9", "gold_diff_in_minute_10","gold_diff_in_minute_11","gold_diff_in_minute_12","gold_diff_in_minute_13","gold_diff_in_minute_14","gold_diff_in_minute_15")]
+
+# This gets reflected in the heatmap:
+ggcorr(match_subset)
+
+```
+
+Already in the second minute we can see that the gold difference is a significant predictor for winning or losing! 
+
+
+```{r "rough exploration"}
+# do some rough exploration
+rough_subset <- matches_seperated[,c("rResult", "gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3", "League", "Type")]
+
+rough_subset <- matches_seperated[,c("rResult", "League", "Type")]
+
+# This one is computationally very heavy and does not give nice results for our dataset, there seems to be a difference in leagues but it is hard to see:
+ggpairs(rough_subset) +
+  theme(
+    axis.text = element_text(size = 3),
+    axis.title = element_text(size = 2),
+    legend.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(colour = NA),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "grey95"))
+```
+There seems to be a difference in leagues
+
+
+```{r "why/where does blue wins more than red"}
+# Use winner instead of Rresult to get instant nice columns:
+qplot(x = winner, data = matches) +
+  facet_grid(.~Type)
+# The mayor difference between the blue and red seems to be in the regular season
+
+qplot(x = winner, data = matches) +
+  facet_grid(.~League)
+# Only in one league the difference between red and blue is tilted the other way. More plays seems to indicate bigger differences.
+```
+Only in one league the difference between red and blue is tilted the other way. More plays seems to indicate bigger differences.
