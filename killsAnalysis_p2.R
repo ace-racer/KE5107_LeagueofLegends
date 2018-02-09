@@ -23,8 +23,14 @@ all_num_kills_columns <- c(blue_num_kills_columns, red_num_kills_columns)
 
 all_num_kills_columns_with_result <- c(all_num_kills_columns, "bResult")
 
-# head(matches_data[,unlist(all_num_kills_columns_with_result)])
 
 # Get correlation between the number of kills and the result of the match
 killscor <- cor(matches_data[,unlist(all_num_kills_columns_with_result)])
 corrplot(killscor, method = "circle")
+
+first_kill_columns_with_result <- c("TowersFirstKillBy", "InhibsFirstKillBy", "DragonsFirstKillBy", "bResult")
+
+# Get correlation between the first kill and the result of the match
+first_kills_correlation <- cor(matches_data[,unlist(first_kill_columns_with_result)])
+corrplot(first_kills_correlation, method = "circle")
+
