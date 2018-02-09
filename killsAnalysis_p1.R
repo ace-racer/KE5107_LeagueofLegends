@@ -68,7 +68,7 @@ for(i in 1: length(first_kill_elements))
   
   first_kill_by_column_name <- paste(column_name, "FirstKillBy",sep="")
   
-  matches_data[,first_kill_by_column_name] <- matches_data[,blue_output_column_name] < matches_data[,red_output_column_name]
+  matches_data[,first_kill_by_column_name] <- as.numeric(matches_data[,blue_output_column_name] < matches_data[,red_output_column_name])
 }
 
 
