@@ -50,15 +50,15 @@ for(i in 1: length(first_kill_elements))
 {
   column_name <- unlist(first_kill_elements[i])
   
+  # Get the red and blue specific column names
   red_column_name <- paste("r", column_name,sep="")
   blue_column_name <- paste("b", column_name,sep="")
   
-  print(red_column_name)
-  print(blue_column_name)
-  
+  # Get the output column name to store the first destroyed time
   red_output_column_name <- paste("r", column_name, "FirstDestroyedTime",sep="")
   blue_output_column_name <- paste("b", column_name, "FirstDestroyedTime",sep="")
   
+  # Get the first number from the list of numbers
   matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getFirstNumber))
   matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getFirstNumber))
   
@@ -66,11 +66,10 @@ for(i in 1: length(first_kill_elements))
   matches_data[,blue_output_column_name] <- as.numeric(matches_data[,blue_output_column_name])
   matches_data[,red_output_column_name] <- as.numeric(matches_data[,red_output_column_name])
   
+  # Get the name of the output column
   first_kill_by_column_name <- paste(column_name, "FirstKillBy",sep="")
   
   matches_data[,first_kill_by_column_name] <- as.numeric(matches_data[,blue_output_column_name] < matches_data[,red_output_column_name])
 }
 
-
-#head(matches_data)
 write.csv(matches_data, "processed/matches.csv", row.names = FALSE)
