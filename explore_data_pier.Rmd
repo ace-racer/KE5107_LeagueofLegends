@@ -88,11 +88,7 @@ Faker at Middle position
 We can go one step further to see which are the most frequent combos based on this data, if required. 
 
 
-<<<<<<< HEAD
 ```{r analyze_top_champs}
-=======
-```{r analyze_top_champs, echo=FALSE}
->>>>>>> 3b762781d37a169d071a04979bdae2fae12c5528
 
 plotTopChampionsForPositionCombined <- function(dataset1, col_name1, dataset2, col_name2, titleStr){
   t1 <- table(dataset1[[col_name1]])
