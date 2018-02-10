@@ -9,6 +9,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
 ```
 
 
@@ -59,9 +60,7 @@ plotTopPlayersForPositionCombined <- function(dataset1, col_name1, dataset2, col
   t2 <- table(dataset2[[col_name2]])
   t2_sorted = sort(t2, decreasing=TRUE)[1:10]
   t2_sorted_df = data.frame(t2_sorted)
-  print(t1_sorted_df)
   names(t2_sorted_df)[names(t2_sorted_df) == 'Freq'] <- 'Freq2'
-  print(t2_sorted_df)
   new_df <- merge(t1_sorted_df, t2_sorted_df, all.x=TRUE)
   new_df <- ddply(new_df, .(Var1, Freq, Freq2), summarise, Total=sum(Freq, Freq2))
   names(new_df)[names(new_df) == 'Var1'] <- 'Player'
@@ -73,17 +72,6 @@ plotTopPlayersForPositionCombined(blue_skt_wins, 'blueADC', red_skt_wins, 'redAD
 plotTopPlayersForPositionCombined(blue_skt_wins, 'blueJungle', red_skt_wins, 'redJungle', "Jungle Position")
 plotTopPlayersForPositionCombined(blue_skt_wins, 'blueSupport', red_skt_wins, 'redSupport', "Support Position")
 plotTopPlayersForPositionCombined(blue_skt_wins, 'blueMiddle', red_skt_wins, 'redMiddle', "Middle Position")
-# plotTopPlayersForPosition(blue_skt_wins, 'blueTop')
-# plotTopPlayersForPosition(blue_skt_wins, 'blueADC')
-# plotTopPlayersForPosition(blue_skt_wins, 'blueJungle')
-# plotTopPlayersForPosition(blue_skt_wins, 'blueSupport')
-# plotTopPlayersForPosition(blue_skt_wins, 'blueMiddle')
-# 
-# plotTopPlayersForPosition(red_skt_wins, 'redTop')
-# plotTopPlayersForPosition(red_skt_wins, 'redADC')
-# plotTopPlayersForPosition(red_skt_wins, 'redJungle')
-# plotTopPlayersForPosition(red_skt_wins, 'redSupport')
-# plotTopPlayersForPosition(red_skt_wins, 'redMiddle')
 
 ```
 
@@ -100,7 +88,7 @@ Faker at Middle position
 We can go one step further to see which are the most frequent combos based on this data, if required. 
 
 
-```{r}
+```{r analyze_top_champs, echo=FALSE}
 
 plotTopChampionsForPositionCombined <- function(dataset1, col_name1, dataset2, col_name2, titleStr){
   t1 <- table(dataset1[[col_name1]])
@@ -111,7 +99,6 @@ plotTopChampionsForPositionCombined <- function(dataset1, col_name1, dataset2, c
   t2_sorted_df = data.frame(t2_sorted)
   names(t2_sorted_df)[names(t2_sorted_df) == 'Freq'] <- 'Freq2'
   new_df <- merge(t1_sorted_df, t2_sorted_df, all.x=TRUE)
-  print(new_df)
   names(new_df)[names(new_df) == 'Var1'] <- 'Player'
   new_df <- ddply(new_df, .(Player, Freq, Freq2), summarise, Total=sum(Freq, Freq2))
   new_df <- new_df[complete.cases(new_df), ] # remove NA
@@ -126,36 +113,6 @@ plotTopChampionsForPositionCombined(blue_skt_wins, 'blueJungleChamp', red_skt_wi
 plotTopChampionsForPositionCombined(blue_skt_wins, 'blueSupportChamp', red_skt_wins, 'redSupportChamp', "Support Position")
 plotTopChampionsForPositionCombined(blue_skt_wins, 'blueMiddleChamp', red_skt_wins, 'redMiddleChamp', "Middle Position")
 
-# blue_top_champs <- plotTopPlayersForPosition(blue_skt_wins, 'blueTopChamp')
-# red_top_champs <- plotTopPlayersForPosition(red_skt_wins, 'redTopChamp')
-# names(red_top_champs)[names(red_top_champs) == 'Freq'] <- 'Freq2'
-# new_df <- merge(blue_top_champs, red_top_champs, all.x=TRUE)
-# new_df <- ddply(new_df, .(Player, Freq, Freq2), summarise, Total=sum(Freq, Freq2))
-# new_df <- new_df[complete.cases(new_df), ] # remove NA
-# new_df <- new_df[with(new_df, order(-Total)),]
-
-# # Function to combine positions for blue skt and red skt wins
-# plotTopPlayersForPositionCombined <- function(dataset1, col_name1, dataset2, col_name2, titleStr){
-#   t1 <- table(dataset1[[col_name1]])
-#   t1_sorted = sort(t1, decreasing=TRUE)[1:10]
-#   t1_sorted_df = data.frame(t1_sorted)
-#   t2 <- table(dataset2[[col_name2]])
-#   t2_sorted = sort(t2, decreasing=TRUE)[1:10]
-#   t2_sorted_df = data.frame(t2_sorted)
-#   print(t1_sorted_df)
-#   names(t2_sorted_df)[names(t2_sorted_df) == 'Freq'] <- 'Freq2'
-#   print(t2_sorted_df)
-#   new_df <- merge(t1_sorted_df, t2_sorted_df, all.x=TRUE)
-#   new_df <- ddply(new_df, .(Var1, Freq, Freq2), summarise, Total=sum(Freq, Freq2))
-#   names(new_df)[names(new_df) == 'Var1'] <- 'Player'
-#   ggplot(new_df, aes(x=Player,y=Total)) +geom_histogram(stat = "identity")+ggtitle(titleStr) + theme(plot.title = element_text(hjust = 0.5))
-# }
-# 
-# plotTopPlayersForPositionCombined(blue_skt_wins, 'blueTopChamp', red_skt_wins, 'redTopChamp', "Top Position")
-# plotTopPlayersForPositionCombined(blue_skt_wins, 'blueADCChamp', red_skt_wins, 'redADCChamp', "ADC Position")
-# plotTopPlayersForPositionCombined(blue_skt_wins, 'blueJungleChamp', red_skt_wins, 'redJungleChamp', "Jungle Position")
-# plotTopPlayersForPositionCombined(blue_skt_wins, 'blueSupportChamp', red_skt_wins, 'redSupportChamp', "Support Position")
-# plotTopPlayersForPositionCombined(blue_skt_wins, 'blueMiddleChamp', red_skt_wins, 'redMiddleChamp', "Middle Position")
 ```
 
 For Champions, there definitely are favourite champions for each position, but as you can see it is more varied. 
