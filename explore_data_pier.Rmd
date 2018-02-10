@@ -1,0 +1,98 @@
+---
+title: "explore_data_pier"
+author: "pier"
+date: "10/02/2018"
+output:
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load_data}
+rm(list=ls()) # cleanup
+matches <- read.csv("/Users/pierlim/R_Projects/League_Of_Legends/matches.csv")
+bluewin <- subset(matches, matches$bResult==1)
+redwin <- subset(matches, matches$rResult==1)
+```
+
+See blue top winning teams 
+
+```{r top_winning_blue_teams, echo=FALSE}
+t <- table(bluewin$blueTeamTag)
+t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Team'
+ggplot(t_sorted_df, aes(x=Team,y=Freq)) +geom_bar(stat = "identity")
+```
+
+See top winning red teams.
+
+```{r top_winning_red_teams, echo=FALSE}
+t <- table(redwin$redTeamTag)
+t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Team'
+ggplot(t_sorted_df, aes(x=Team,y=Freq)) +geom_bar(stat = "identity")
+```
+
+Okay, Blue Team SKT clearly has the most wins, regardless of whether they are blue or red. 
+Let's take out all the games where SKT won, and analyze this particular team to see what is their magic. 
+
+```{r analyze_top_team, echo=FALSE}
+blue_skt_wins <- subset(bluewin, bluewin$blueTeamTag=="SKT")
+red_skt_wins <- subset(redwin, redwin$redTeamTag=="SKT")
+#skt_wins <- rbind(blue_skt_wins, red_skt_wins)
+
+plotTopPlayersForPosition <- function(dataset, col_name){
+  #col_name <- deparse(substitute(col_name))
+  #print(col_name)
+  t <- table(dataset[[col_name]])
+  t_sorted = sort(t, decreasing=TRUE)[1:10]
+  t_sorted_df = data.frame(t_sorted)
+  names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Player'
+  ggplot(t_sorted_df, aes(x=Player,y=Freq)) +geom_histogram(stat = "identity")+ggtitle(col_name) + theme(plot.title = element_text(hjust = 0.5))
+}
+
+plotTopPlayersForPosition(blue_skt_wins, 'blueTop')
+plotTopPlayersForPosition(blue_skt_wins, 'blueADC')
+plotTopPlayersForPosition(blue_skt_wins, 'blueJungle')
+plotTopPlayersForPosition(blue_skt_wins, 'blueSupport')
+plotTopPlayersForPosition(blue_skt_wins, 'blueMiddle')
+
+plotTopPlayersForPosition(red_skt_wins, 'redTop')
+plotTopPlayersForPosition(red_skt_wins, 'redADC')
+plotTopPlayersForPosition(red_skt_wins, 'redJungle')
+plotTopPlayersForPosition(red_skt_wins, 'redSupport')
+plotTopPlayersForPosition(red_skt_wins, 'redMiddle')
+
+```
+
+It's very interesting - it's not so much the champions, but the players themselves play the same position almost all of the time! They are highly specialized.
+
+The most frequent combo for blue_skt_wins is : 
+
+MaRin at Top position
+Bang at ADC position (Bang is the only one who sometimes plays at Jungle position)
+Bengi at Jungle position
+Wolf at Support position
+Faker at Middle position
+
+The most frequent combo for red_skt_wins is : 
+
+Duke at Top position
+Bang at ADC position 
+Blank at Jungle position
+Wolf at Support position
+Faker at Middle position
+
+
+```{r}
+
+```
+
+
+
