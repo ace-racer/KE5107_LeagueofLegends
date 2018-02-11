@@ -133,6 +133,10 @@ matches_seperated <- japply(matches_seperated, c(create_column_names(gamelength,
 # Hooray it works:
 str(matches_seperated$gold_diff_in_minute_80)
 
+
+matches$golddiff <- NULL
+matches_seperated$golddiff <- NULL
+
 # may be interesting to make a red vs blue won dataset.
 
 blueset <- subset(matches, winner == 'blue')
