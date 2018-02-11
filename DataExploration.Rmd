@@ -1,0 +1,46 @@
+---
+title: "League of Legends"
+output:
+  html_document:
+    df_print: paged
+---
+### Data Exploration
+
+League of Legends matches data is retrieved from: https://www.kaggle.com/chuckephron/leagueoflegends
+
+* Due take note that we use [Version 6](https://www.kaggle.com/chuckephron/leagueoflegends/version/6/data).
+
+First, load all the important packages.
+
+```{r "0.1 packages"}
+library(dplyr)
+```
+
+Let's load matches data and show the summary.
+
+```{r "0.2 Data Wrangling"}
+
+matches = read.csv("data/matches.csv")
+
+# 0.1.1 viewing & correcting types
+str(matches)
+```
+
+Are each team always fields same set of players of each match? Let's find it out!
+
+We try to find it out by checking TSM members who play in each match.
+
+```{r}
+matches$tsmTop <- ifelse(matches$blueTeamTag == "TSM", as.character(matches$blueTop), ifelse(matches$redTeamTag == "TSM", as.character(matches$redTop), ""))
+matches$tsmJungle <- ifelse(matches$blueTeamTag == "TSM", as.character(matches$blueJungle), ifelse(matches$redTeamTag == "TSM", as.character(matches$redJungle), ""))
+matches$tsmMiddle <- ifelse(matches$blueTeamTag == "TSM", as.character(matches$blueMiddle), ifelse(matches$redTeamTag == "TSM", as.character(matches$redMiddle), ""))
+matches$tsmADC <- ifelse(matches$blueTeamTag == "TSM", as.character(matches$blueADC), ifelse(matches$redTeamTag == "TSM", as.character(matches$redADC), ""))
+matches$tsmSupport <- ifelse(matches$blueTeamTag == "TSM", as.character(matches$blueSupport), ifelse(matches$redTeamTag == "TSM", as.character(matches$redSupport), ""))
+matches$tsmTag <- ifelse(matches$blueTeamTag == "TSM", "TSM", ifelse(matches$redTeamTag == "TSM", "TSM", ""))
+
+tsmMatches <- matches[matches$tsmTag == "TSM", ]
+
+write.csv(tsmMatches, "data/matches_tsm.csv")
+```
+
+
