@@ -20,3 +20,9 @@ Repository to contain all the R scripts that we develop for the KE5107 course CA
 
 ### Kindly note
 5. Please do not commit anything to the master branch. This is the sacred branch where we consolidate our code after the discussion!
+
+## Description of files
+
+1. LeagueofLegends Discovery.Rmd - contains all scripts to perform discovery on the raw dataset
+2. Process.Rmd - contains all scripts to perform data processing and create more columns from the existing ones. This generates a processed file as output.
+3. Processed Data Discovery.Rmd - Contains all scripts to do additional discovery on the processed data. Note that this should use the processed file as input.
