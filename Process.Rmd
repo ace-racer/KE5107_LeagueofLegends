@@ -1,0 +1,95 @@
+---
+title: "Process the league of legends dataset"
+output: html_notebook
+---
+
+
+## Process the current data and get:
+
+### 1. Number of game elements (towers, inhibitors, dragons and barons) killed or destroyed by red and blue teams in the columns bTowersNum	bInhibsNum	bDragonsNum	bBaronsNum	bHeraldsNum	rTowersNum	rInhibsNum	rDragonsNum	rBaronsNum	rHeraldsNum
+
+### 2. The time when the game element (towers, inhibitors, dragons and barons) was destroyed by the red and the blue teams. This value is 1000 if there was no element destroyed by that team. The columns created are bTowersFirstDestroyedTime,	rTowersFirstDestroyedTime,		bInhibsFirstDestroyedTime,	rInhibsFirstDestroyedTime,		bDragonsFirstDestroyedTime,	rDragonsFirstDestroyedTime
+
+### 3. The team that first killed pr destroyed a game element (towers, inhibitors, dragons and barons). This value is 1 if it was performed by the Blue team and 0 if performed by the Red team. These columns are TowersFirstKillBy,	InhibsFirstKillBy, DragonsFirstKillBy
+```{r}
+library(stringr)
+
+setwd("H:\\KE 5107 Projects\\code\\KE5107_LeagueofLegends")
+matches_data = read.csv("data/matches.csv")
+game_elements <- c("Towers", "Inhibs", "Dragons", "Barons", "Heralds") 
+
+# Prepends r to the item
+prependRed <- function(p){
+  paste("r", p, sep="")
+}
+
+# Prepends b to the item
+prependBlue <- function(p){
+  paste("b", p, sep="")
+}
+
+# Get the first number from a series of numbers
+getFirstNumber <- function(value){
+  if(value != "[]"){
+    splits <- strsplit(value, ",")
+    value <- sapply(splits, `[`, 1)
+    
+    number <- sub("\\[\\[", "", value)
+    return(number)
+  }
+  
+  # A high value if the first number is not present
+  return(10000)
+}
+
+# Get the Kills columns for blue and red teams
+blue_kills_columns <- lapply(game_elements, prependBlue)
+red_kills_columns <- lapply(game_elements, prependRed)
+
+# Combine the Kills columns
+all_kills_columns <- c(blue_kills_columns, red_kills_columns)
+
+for(i in 1:length(all_kills_columns))
+{
+  column_name <- unlist(all_kills_columns[i])
+  output_column_name <- paste(column_name, "Num", sep="")
+  
+  # Each item is enclosed in its own square brackets. Note that there is an extra [ to contain all the elements which needs to be removed
+  matches_data[,output_column_name] <- str_count(matches_data[,column_name], "\\[")-1
+}
+
+first_kill_elements <- c("Towers", "Inhibs", "Dragons") 
+for(i in 1: length(first_kill_elements))
+{
+  column_name <- unlist(first_kill_elements[i])
+  
+  # Get the red and blue specific column names
+  red_column_name <- paste("r", column_name,sep="")
+  blue_column_name <- paste("b", column_name,sep="")
+  
+  # Get the output column name to store the first destroyed time
+  red_output_column_name <- paste("r", column_name, "FirstDestroyedTime",sep="")
+  blue_output_column_name <- paste("b", column_name, "FirstDestroyedTime",sep="")
+  
+  # Get the first number from the list of numbers
+  matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getFirstNumber))
+  matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getFirstNumber))
+  
+  # convert the first kill times to numeric for comparison
+  matches_data[,blue_output_column_name] <- as.numeric(matches_data[,blue_output_column_name])
+  matches_data[,red_output_column_name] <- as.numeric(matches_data[,red_output_column_name])
+  
+  # Get the name of the output column
+  first_kill_by_column_name <- paste(column_name, "FirstKillBy",sep="")
+  
+  matches_data[,first_kill_by_column_name] <- as.numeric(matches_data[,blue_output_column_name] < matches_data[,red_output_column_name])
+}
+
+```
+## Insert code to do other processing of the matches data
+```{r}
+```
+## Write the current contents of the matches_data dataframe into a CSV in the current folder
+```{r}
+write.csv(matches_data, "processed_matches.csv", row.names = FALSE)
+```
