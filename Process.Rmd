@@ -29,16 +29,25 @@ prependBlue <- function(p){
 }
 
 # Get the first number from a series of numbers
-getFirstNumber <- function(value, splitAtCharacter){
+getFirstNumber <- function(value){
   if(value != "[]"){
-    splits <- strsplit(value, splitAtCharacter)
-    value <- sapply(splits, `[`, 1)
+    # Get all the number strings from the list
+    all_numbers = str_extract_all(value, "[0-9]*[.][0-9]*")
     
-    number <- sub("\\[\\[", "", value)
-    return(number)
+    # Get the number strings in a list
+    all_numbers_list = unlist(all_numbers)
+    
+    # Convert each item to a number
+    all_numbers_list = as.numeric(all_numbers_list)
+    
+    # Sort all the numbers
+    all_numbers_list_sorted = all_numbers_list[order(all_numbers_list)]
+    
+    # Get the first number
+    return(all_numbers_list_sorted[1])
   }
   
-  # A high value if the first number is not present
+  # A high value if the no number is not present
   return(10000)
 }
 
@@ -73,17 +82,9 @@ for(i in 1: length(first_kill_elements))
   
   # Get the first number from the list of numbers
   
-  # Get the split character based on the column whose data is required
-  splitCharacterForColumn = ','
+  matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getFirstNumber))
   
-  if(column_name == "Barons")
-  {
-    splitCharacterForColumn = ']'
-  }
-  
-  matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getFirstNumber, splitAtCharacter = splitCharacterForColumn))
-  
-  matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getFirstNumber, splitAtCharacter = splitCharacterForColumn))
+  matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getFirstNumber))
   
   # convert the first kill times to numeric for comparison
   matches_data[,blue_output_column_name] <- as.numeric(matches_data[,blue_output_column_name])
