@@ -6,17 +6,17 @@ output: html_notebook
 
 ## Process the current data and get:
 
-### 1. Number of game elements (towers, inhibitors, dragons and barons) killed or destroyed by red and blue teams in the columns bTowersNum	bInhibsNum	bDragonsNum	bBaronsNum	bHeraldsNum	rTowersNum	rInhibsNum	rDragonsNum	rBaronsNum	rHeraldsNum
+1. Number of game elements (towers, inhibitors, dragons and barons) killed or destroyed by red and blue teams in the columns bTowersNum	bInhibsNum	bDragonsNum	bBaronsNum	bHeraldsNum	rTowersNum	rInhibsNum	rDragonsNum	rBaronsNum	rHeraldsNum
 
-### 2. The time when the game element (towers, inhibitors, dragons and barons) was destroyed by the red and the blue teams. This value is 1000 if there was no element destroyed by that team. The columns created are bTowersFirstDestroyedTime,	rTowersFirstDestroyedTime,		bInhibsFirstDestroyedTime,	rInhibsFirstDestroyedTime,		bDragonsFirstDestroyedTime,	rDragonsFirstDestroyedTime
+2. The time when the game element (towers, inhibitors, dragons and barons) was destroyed by the red and the blue teams. This value is 1000 if there was no element destroyed by that team. The columns created are bTowersFirstDestroyedTime,	rTowersFirstDestroyedTime,		bInhibsFirstDestroyedTime,	rInhibsFirstDestroyedTime,		bDragonsFirstDestroyedTime,	rDragonsFirstDestroyedTime
 
-### 3. The team that first killed pr destroyed a game element (towers, inhibitors, dragons and barons). This value is 1 if it was performed by the Blue team and 0 if performed by the Red team. These columns are TowersFirstKillBy,	InhibsFirstKillBy, DragonsFirstKillBy
+3. The team that first killed pr destroyed a game element (towers, inhibitors, dragons and barons). This value is 1 if it was performed by the Blue team and 0 if performed by the Red team. These columns are TowersFirstKillBy,	InhibsFirstKillBy, DragonsFirstKillBy
 ```{r}
 library(stringr)
 
 setwd("H:\\KE 5107 Projects\\code\\KE5107_LeagueofLegends")
 matches_data = read.csv("data/matches.csv")
-game_elements <- c("Towers", "Inhibs", "Dragons", "Barons", "Heralds") 
+game_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
 # Prepends r to the item
 prependRed <- function(p){
@@ -29,9 +29,9 @@ prependBlue <- function(p){
 }
 
 # Get the first number from a series of numbers
-getFirstNumber <- function(value){
+getFirstNumber <- function(value, splitAtCharacter){
   if(value != "[]"){
-    splits <- strsplit(value, ",")
+    splits <- strsplit(value, splitAtCharacter)
     value <- sapply(splits, `[`, 1)
     
     number <- sub("\\[\\[", "", value)
@@ -58,7 +58,7 @@ for(i in 1:length(all_kills_columns))
   matches_data[,output_column_name] <- str_count(matches_data[,column_name], "\\[")-1
 }
 
-first_kill_elements <- c("Towers", "Inhibs", "Dragons") 
+first_kill_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 for(i in 1: length(first_kill_elements))
 {
   column_name <- unlist(first_kill_elements[i])
@@ -72,8 +72,18 @@ for(i in 1: length(first_kill_elements))
   blue_output_column_name <- paste("b", column_name, "FirstDestroyedTime",sep="")
   
   # Get the first number from the list of numbers
-  matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getFirstNumber))
-  matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getFirstNumber))
+  
+  # Get the split character based on the column whose data is required
+  splitCharacterForColumn = ','
+  
+  if(column_name == "Barons")
+  {
+    splitCharacterForColumn = ']'
+  }
+  
+  matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getFirstNumber, splitAtCharacter = splitCharacterForColumn))
+  
+  matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getFirstNumber, splitAtCharacter = splitCharacterForColumn))
   
   # convert the first kill times to numeric for comparison
   matches_data[,blue_output_column_name] <- as.numeric(matches_data[,blue_output_column_name])
