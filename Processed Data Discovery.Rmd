@@ -9,7 +9,7 @@ library(corrplot)
 
 setwd("H:\\KE 5107 Projects\\code\\KE5107_LeagueofLegends")
 matches_data = read.csv("processed_matches.csv")
-game_elements <- c("Towers", "Inhibs", "Dragons", "Barons", "Heralds") 
+game_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
 # Get the column name for the red team
 getRedColumnName <- function(p){
@@ -39,7 +39,7 @@ corrplot(killscor, method = "circle")
 
 ## Get correlation between the first kills and the outcome of the match
 ```{r}
-first_kill_columns_with_result <- c("TowersFirstKillBy", "InhibsFirstKillBy", "DragonsFirstKillBy", "bResult")
+first_kill_columns_with_result <- c("TowersFirstKillBy", "InhibsFirstKillBy", "DragonsFirstKillBy", "BaronsFirstKillBy", "bResult")
 
 # Get correlation between the first kill and the result of the match
 first_kills_correlation <- cor(matches_data[,unlist(first_kill_columns_with_result)])
