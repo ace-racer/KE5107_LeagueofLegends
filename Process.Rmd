@@ -28,8 +28,8 @@ prependBlue <- function(p){
   paste("b", p, sep="")
 }
 
-# Get the first number from a series of numbers
-getFirstNumber <- function(value){
+# Get the smallest number from a series of numbers
+getSmallestNumber <- function(value){
   if(value != "[]"){
     # Get all the number strings from the list
     all_numbers = str_extract_all(value, "[0-9]*[.][0-9]*")
@@ -82,9 +82,9 @@ for(i in 1: length(first_kill_elements))
   
   # Get the first number from the list of numbers
   
-  matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getFirstNumber))
+  matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getSmallestNumber))
   
-  matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getFirstNumber))
+  matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getSmallestNumber))
   
   # convert the first kill times to numeric for comparison
   matches_data[,blue_output_column_name] <- as.numeric(matches_data[,blue_output_column_name])
