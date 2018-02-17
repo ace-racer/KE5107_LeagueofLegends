@@ -193,7 +193,7 @@ cuberoot_trans = function() trans_new('cuberoot',
 create_column_names <- function(columns, namestring){
   maxnr <- max(matches$columns)
   vectofnr = c();
-  for (i in 1:81){
+  for (i in 1:columns){
     # print(i)
     vectofnr[i] <- paste(namestring, as.character(i), sep="_")
     # print(vectofnr)
@@ -289,6 +289,8 @@ matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
 matches$goldblue <- remove_first_last(matches$goldblue)
 matches$golddiff <- remove_first_last(matches$golddiff)
 matches$goldred <- remove_first_last(matches$goldred)
+matches$blueBans <- remove_first_last(matches$blueBans)
+matches$redBans <- remove_first_last(matches$redBans)
 
 
 ## 0.4.4 Square the data if scewed 
@@ -338,7 +340,7 @@ summary(matches$YearSeason)
 ```r
 # It gets messy very easily so extra dataset instead of extra variable:
 matches_seperated <- matches %>%
-  separate(as.numeric(golddiff), into = c(create_column_names(gamelength, "gold_diff_in_minute")), sep = "\\,")
+  separate(as.numeric(golddiff), into = c(create_column_names(max(matches$gamelength), "gold_diff_in_minute")), sep = "\\,")
 ```
 
 ```
@@ -352,8 +354,34 @@ matches_seperated <- matches %>%
 ```
 
 ```r
+bans_seperated <- matches %>%    
+  separate(blueBans, into = c(create_column_names(5, "bansblue")), sep = "\\,")%>% 
+  separate(redBans, into = c(create_column_names(5, "bansred")), sep = "\\,")
+```
+
+```
+## Warning in max(matches$columns): no non-missing arguments to max; returning
+## -Inf
+```
+
+```
+## Warning: Too few values at 3924 locations: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+## 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...
+```
+
+```
+## Warning in max(matches$columns): no non-missing arguments to max; returning
+## -Inf
+```
+
+```
+## Warning: Too few values at 3923 locations: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+## 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...
+```
+
+```r
 # Make them numeric
-matches_seperated <- japply(matches_seperated, c(create_column_names(gamelength, "gold_diff_in_minute")), as.numeric )
+matches_seperated <- japply(matches_seperated, c(create_column_names(max(matches$gamelength), "gold_diff_in_minute")), as.numeric )
 ```
 
 ```
@@ -371,6 +399,132 @@ str(matches_seperated$gold_diff_in_minute_80)
 ```
 
 ```r
+# Make them categorical --> somehow he doesn't want to do this when with surrounded with ', so do seperately
+# bans_seperated <- japply(bans_seperated, c(create_column_names(5, "bansblue")), as.factor)
+# bans_seperated <- japply(bans_seperated, c("bansblue_2", "bansblue_3"), as.factor)
+
+# get rid of space
+bans_seperated$bansblue_2 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_3 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_4 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_5 <- substr(bans_seperated$bansblue_2, 2, 100)
+
+bans_seperated$bansblue_1 <- as.factor(bans_seperated$bansblue_1)
+bans_seperated$bansblue_2 <- as.factor(bans_seperated$bansblue_2)
+bans_seperated$bansblue_3 <- as.factor(bans_seperated$bansblue_3)
+bans_seperated$bansblue_4 <- as.factor(bans_seperated$bansblue_4)
+bans_seperated$bansblue_5 <- as.factor(bans_seperated$bansblue_5)
+
+summary(bans_seperated$bansblue_1)
+```
+
+```
+##     'Leblanc'    'Malzahar'        'Shen'     'Nidalee'        'Ryze' 
+##           385           234           234           233           220 
+##        'Azir'      'Syndra'       'Jayce'      'Rumble'     'Kalista' 
+##           211           205           198           195           180 
+##      'Thresh'       'Elise'        'Zyra'        'Lulu'         'Zed' 
+##           173           165           138           134           121 
+##     'Caitlyn'       'Fiora'  'Cassiopeia'     'Taliyah' 'TwistedFate' 
+##           109           107           102           102            99 
+##      'Gragas'      'LeeSin'     'Alistar'       'Galio'      'Maokai' 
+##            97            96            95            94            91 
+##      'Kennen'     'Trundle'   'Gangplank'      'RekSai'       'Sivir' 
+##            89            89            87            86            84 
+##    'Vladimir'    'Kassadin'        'Bard'      'Graves'   'Lissandra' 
+##            83            81            78            77            77 
+##       'Varus'       'Ivern'     'Camille'   'TahmKench'        'Fizz' 
+##            77            76            75            75            68 
+##     'Orianna'      'Zilean'       'Corki'       'Braum'     'Kindred' 
+##            64            64            59            57            57 
+##       'Karma'      'Viktor'      'Rengar'      'Irelia' 'AurelionSol' 
+##            56            56            53            52            49 
+##       'Poppy'      'Lucian'        'Olaf'       'Xayah'        'Jhin' 
+##            49            48            48            47            46 
+##        'Ashe'        'Gnar'     'Morgana'     'Hecarim'      'Khazix' 
+##            44            43            43            42            42 
+##        'Ekko'      'Ezreal'      'KogMaw'       'Rakan'      'Twitch' 
+##            40            36            34            34            33 
+##    'JarvanIV'       'Annie'         'Jax'      'Anivia'       'Swain' 
+##            31            30            29            27            26 
+##       'Quinn'       'Urgot'    'Renekton'                   'Sejuani' 
+##            25            25            23            22            22 
+##      'Soraka'         'Zac'        'Ahri'       'Yasuo'      'Draven' 
+##            21            21            19            18            16 
+##    'Tristana'  'Blitzcrank'    'Malphite'    'Nautilus'       'Vayne' 
+##            16            15            15            15            15 
+##     'Chogath'      'Veigar'       'Ziggs'       'Diana'       'Janna' 
+##            14            14            13            12            12 
+##        'Kled'      'Illaoi'      'Xerath'        'Sion'       'Talon' 
+##            12            11            11            10             9 
+##     'Evelynn'    'Katarina' 'MissFortune'       'Brand'       (Other) 
+##             7             7             7             6            66
+```
+
+```r
+bans_seperated$bansred_2 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_3 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_4 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_5 <- substr(bans_seperated$bansred_2, 2, 100)
+
+bans_seperated$bansred_1 <- as.factor(bans_seperated$bansred_1)
+bans_seperated$bansred_2 <- as.factor(bans_seperated$bansred_2)
+bans_seperated$bansred_3 <- as.factor(bans_seperated$bansred_3)
+bans_seperated$bansred_4 <- as.factor(bans_seperated$bansred_4)
+bans_seperated$bansred_5 <- as.factor(bans_seperated$bansred_5)
+
+summary(bans_seperated$bansred_1)
+```
+
+```
+##         'Zac'     'Kalista'     'Leblanc'     'Nidalee'     'Camille' 
+##           622           467           462           366           312 
+##        'Ryze'     'Caitlyn'       'Elise'      'Rengar'    'Vladimir' 
+##           311           206           203           177           170 
+##        'Azir'   'Gangplank'       'Varus'        'Lulu'      'Rumble' 
+##           169           162           155           133           125 
+##        'Shen'      'Syndra'     'Alistar'      'Graves'      'RekSai' 
+##           124           118            96            95            93 
+##      'Thresh'       'Fiora'         'Zed'   'Lissandra'    'Malzahar' 
+##            80            78            76            75            75 
+##       'Galio'     'Taliyah'       'Sivir'        'Bard'  'Cassiopeia' 
+##            73            73            68            66            64 
+##      'LeeSin'      'Gragas'        'Fizz'   'TahmKench'      'Kennen' 
+##            63            55            54            54            53 
+##       'Poppy'       'Jayce' 'TwistedFate'      'Zilean'       'Ivern' 
+##            53            52            52            48            44 
+##     'Orianna'       'Corki'     'Kindred'      'KogMaw'      'Lucian' 
+##            43            42            42            41            40 
+##      'Maokai'    'Kassadin'     'Trundle'       'Braum'       'Karma' 
+##            40            38            36            33            33 
+##      'Irelia'     'Morgana'        'Ekko' 'AurelionSol'     'Hecarim' 
+##            32            32            31            30            30 
+##      'Viktor'        'Olaf'    'JarvanIV'       'Urgot'      'Anivia' 
+##            30            29            25            25            24 
+##        'Ashe'        'Gnar'        'Jhin'      'Twitch'        'Ahri' 
+##            24            24            24            24            23 
+##       'Xayah'                   'Chogath' 'Mordekaiser'       'Quinn' 
+##            23            22            22            21            21 
+##        'Zyra'      'Soraka'         'Jax'      'Draven'       'Janna' 
+##            21            20            19            14            12 
+##       'Yasuo'       'Ziggs'      'Khazix'       'Rakan'    'Renekton' 
+##            12            12            11            11            11 
+##     'Sejuani'       'Swain'        'Kled'       'Talon'      'Veigar' 
+##            11            11            10            10            10 
+##       'Annie'    'Nautilus'      'Xerath'       'Diana'      'Ezreal' 
+##             9             9             9             8             8 
+##       'Brand'     'Karthus'      'Rammus'    'Tristana'      'Illaoi' 
+##             7             7             7             7             6 
+## 'MissFortune'    'Pantheon'        'Sion'    'Malphite'       (Other) 
+##             5             5             5             4            41
+```
+
+```r
+# it would be cool if the first bans & pick get a higher weight than the second bans for the popularity score
+# so first ban *5 + second ban *4 .. and so on (for both red and blue and pick and ban)
+
+# then just the score * the picks for each team and we got ourselves a perfect predictor (I hope)
+
 matches$golddiff <- NULL
 matches_seperated$golddiff <- NULL
 
@@ -459,7 +613,7 @@ str(matches)
 ##  $ blueSupport     : Factor w/ 295 levels "","Adrian","Air",..: 145 216 88 2 9 129 216 280 139 64 ...
 ##  $ blueSupportChamp: Factor w/ 53 levels "Ahri","Alistar",..: 18 24 3 47 18 3 18 3 18 33 ...
 ##  $ goldblueSupport : Factor w/ 7058 levels "[475, 475, 532, 684, 838, 971, 1104, 1275, 1408, 1522, 1692, 1826, 1975, 2207, 2352, 2617, 2951, 3508, 3827, 41"| __truncated__,..: 6557 6154 6713 5838 6461 6603 7037 6556 6529 6642 ...
-##  $ blueBans        : Factor w/ 6725 levels "['Ahri', 'Corki', 'Ryze']",..: 4571 2525 1957 148 1838 3228 6508 3276 1945 4555 ...
+##  $ blueBans        : chr  "'Rumble', 'Kassadin', 'Lissandra'" "'Kassadin', 'Sivir', 'Lissandra'" "'JarvanIV', 'Lissandra', 'Kassadin'" "'Annie', 'Lissandra', 'Kassadin'" ...
 ##  $ redTop          : Factor w/ 278 levels "","3z","957",..: 35 93 99 187 49 202 90 36 99 70 ...
 ##  $ redTopChamp     : Factor w/ 78 levels "Aatrox","Akali",..: 16 22 63 16 63 16 53 56 27 16 ...
 ##  $ goldredTop      : Factor w/ 7058 levels "[475, 475, 531, 700, 1018, 1314, 1586, 1911, 2113, 2341, 2572, 2922, 3243, 3567, 3979, 4229, 4755, 5146, 5390, "| __truncated__,..: 295 708 939 320 743 599 1119 228 318 128 ...
@@ -475,7 +629,7 @@ str(matches)
 ##  $ redSupport      : Factor w/ 295 levels "","Adrian","Air",..: 139 129 32 280 64 2 88 10 31 145 ...
 ##  $ redSupportChamp : Factor w/ 54 levels "Alistar","Annie",..: 45 2 15 15 2 45 31 5 30 30 ...
 ##  $ goldredSupport  : Factor w/ 7058 levels "[475, 475, 532, 646, 761, 875, 989, 1102, 1366, 1496, 1670, 1958, 2122, 2549, 2685, 2879, 2992, 3315, 3430, 369"| __truncated__,..: 5956 6673 6737 6562 11 6148 6959 5931 7004 6568 ...
-##  $ redBans         : Factor w/ 6440 levels "['Aatrox', 'Nidalee', 'Alistar']",..: 5169 4032 3085 4077 4366 267 4026 3848 4337 4036 ...
+##  $ redBans         : chr  "'Tristana', 'Leblanc', 'Nidalee'" "'RekSai', 'Janna', 'Leblanc'" "'Leblanc', 'Zed', 'RekSai'" "'RekSai', 'Rumble', 'LeeSin'" ...
 ##  $ Address         : Factor w/ 7058 levels "http://matchhistory.br.leagueoflegends.com/pt/#match-details/ESPORTSTMNT02/300266?gameHash=aa0e58f00d1d18e0",..: 4237 4238 4239 4240 4241 4242 4243 4244 4245 4246 ...
 ##  $ winner          : chr  "blue" "red" "blue" "red" ...
 ##  $ YearSeason      : Date, format: "2015-01-01" "2015-01-01" ...
@@ -649,22 +803,14 @@ summary(matches)
 ##  [475, 475, 538, 671, 821, 958, 1104, 1259, 1403, 1542, 2082, 2208, 2334, 2660, 2962, 3118, 3243, 3434, 3560, 3848, 4100, 4286, 4441, 4572, 5028, 5455, 5581, 5881, 6212, 6368, 6740, 6882, 7574]                                                                    :   1  
 ##  [475, 475, 539, 675, 832, 983, 1170, 1325, 1493, 1649, 1785, 1941, 2077, 2223, 2349, 2475, 2616, 2758, 2989, 3115, 3240, 3417, 3698, 3869, 4040, 4175, 4302, 4459, 4649, 4866, 5170, 5306, 5446, 5902, 6029, 6155, 6282, 6505, 6680, 6846, 6993, 7127]              :   1  
 ##  (Other)                                                                                                                                                                                                                                                             :7052  
-##                                 blueBans           redTop    
-##  []                                 :  22   CuVee     : 151  
-##  ['Bard', 'Kassadin', 'AurelionSol']:   5   Smeb      : 151  
-##  ['Azir', 'Corki', 'Gragas']        :   4   Hauntzer  : 149  
-##  ['Nidalee', 'Varus', 'Gangplank']  :   4   Ssumday   : 148  
-##  ['Rumble', 'Kassadin', 'Lissandra']:   4   Vizicsacsi: 135  
-##  ['Trundle', 'Kindred', 'Ryze']     :   4   Impact    : 127  
-##  (Other)                            :7015   (Other)   :6197  
-##    redTopChamp  
-##  Maokai  : 827  
-##  Gnar    : 594  
-##  Shen    : 574  
-##  Rumble  : 492  
-##  Nautilus: 385  
-##  Poppy   : 370  
-##  (Other) :3816  
+##    blueBans                redTop       redTopChamp  
+##  Length:7058        CuVee     : 151   Maokai  : 827  
+##  Class :character   Smeb      : 151   Gnar    : 594  
+##  Mode  :character   Hauntzer  : 149   Shen    : 574  
+##                     Ssumday   : 148   Rumble  : 492  
+##                     Vizicsacsi: 135   Nautilus: 385  
+##                     Impact    : 127   Poppy   : 370  
+##                     (Other)   :6197   (Other) :3816  
 ##                                                                                                                                                                                                                                                                                               goldredTop  
 ##  [475, 475, 531, 700, 1018, 1314, 1586, 1911, 2113, 2341, 2572, 2922, 3243, 3567, 3979, 4229, 4755, 5146, 5390, 5718, 6168, 6593, 7102, 7533, 7730, 8249, 8665, 9405, 9906, 10297, 10411, 10951, 11381, 11802, 12481, 13087, 13758, 14997]                                                         :   1  
 ##  [475, 475, 531, 720, 1079, 1315, 1694, 1993, 2303, 2595, 2866, 3150, 3403, 3826, 4054, 4318, 4683, 5208, 5512, 5889, 6210, 6529, 6912, 7378, 8442, 8556, 9189, 9672, 10232, 10475, 10589, 10733, 10933, 11390, 12132, 12827, 12941, 13055, 13747, 14247, 14792, 14961, 15450, 15864, 16473, 17396]:   1  
@@ -737,14 +883,14 @@ summary(matches)
 ##  [475, 475, 532, 662, 796, 930, 1079, 1194, 1479, 1593, 1727, 1871, 2186, 2381, 2546, 2661, 2995, 3368, 3519, 3678, 3844, 4309, 4452, 4596, 4896, 5069, 5183, 5298, 5458, 5945, 6060, 6173, 6327, 6523, 6682, 6966, 7154, 7268, 7965, 8109, 8222]            :   1  
 ##  [475, 475, 532, 713, 826, 940, 1085, 1230, 1386, 1509, 1733, 1848, 1978, 2112, 2248, 2382, 2540, 2656, 2912, 3026, 3139, 3253, 3432, 3546, 3729]                                                                                                            :   1  
 ##  (Other)                                                                                                                                                                                                                                                     :7052  
-##                            redBans    
-##  []                            :  22  
-##  ['Kalista', 'Gragas', 'Ryze'] :   9  
-##  ['Kalista', 'Ryze', 'Alistar']:   8  
-##  ['Azir', 'Ryze', 'Vladimir']  :   7  
-##  ['Nidalee', 'Ryze', 'Kindred']:   7  
-##  ['Kalista', 'Ryze', 'Gragas'] :   6  
-##  (Other)                       :6999  
+##    redBans         
+##  Length:7058       
+##  Class :character  
+##  Mode  :character  
+##                    
+##                    
+##                    
+##                    
 ##                                                                                                         Address    
 ##  http://matchhistory.br.leagueoflegends.com/pt/#match-details/ESPORTSTMNT02/300266?gameHash=aa0e58f00d1d18e0:   1  
 ##  http://matchhistory.br.leagueoflegends.com/pt/#match-details/ESPORTSTMNT02/300276?gameHash=bc00457a5072a5a5:   1  

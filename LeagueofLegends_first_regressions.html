@@ -212,7 +212,7 @@ cuberoot_trans = function() trans_new('cuberoot',
 create_column_names &lt;- function(columns, namestring){
   maxnr &lt;- max(matches$columns)
   vectofnr = c();
-  for (i in 1:81){
+  for (i in 1:columns){
     # print(i)
     vectofnr[i] &lt;- paste(namestring, as.character(i), sep=&quot;_&quot;)
     # print(vectofnr)
@@ -297,6 +297,8 @@ matches$winner &lt;- ifelse(matches$bResult &gt; 0, c(&quot;blue&quot;), c(&quot
 matches$goldblue &lt;- remove_first_last(matches$goldblue)
 matches$golddiff &lt;- remove_first_last(matches$golddiff)
 matches$goldred &lt;- remove_first_last(matches$goldred)
+matches$blueBans &lt;- remove_first_last(matches$blueBans)
+matches$redBans &lt;- remove_first_last(matches$redBans)
 
 
 ## 0.4.4 Square the data if scewed 
@@ -322,19 +324,144 @@ summary(matches$YearSeason)</code></pre>
 ## &quot;2017-06-01&quot;</code></pre>
 <pre class="r"><code># It gets messy very easily so extra dataset instead of extra variable:
 matches_seperated &lt;- matches %&gt;%
-  separate(as.numeric(golddiff), into = c(create_column_names(gamelength, &quot;gold_diff_in_minute&quot;)), sep = &quot;\\,&quot;)</code></pre>
+  separate(as.numeric(golddiff), into = c(create_column_names(max(matches$gamelength), &quot;gold_diff_in_minute&quot;)), sep = &quot;\\,&quot;)</code></pre>
 <pre><code>## Warning in max(matches$columns): no non-missing arguments to max; returning
 ## -Inf</code></pre>
 <pre><code>## Warning: Too few values at 7056 locations: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 ## 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...</code></pre>
+<pre class="r"><code>bans_seperated &lt;- matches %&gt;%    
+  separate(blueBans, into = c(create_column_names(5, &quot;bansblue&quot;)), sep = &quot;\\,&quot;)%&gt;% 
+  separate(redBans, into = c(create_column_names(5, &quot;bansred&quot;)), sep = &quot;\\,&quot;)</code></pre>
+<pre><code>## Warning in max(matches$columns): no non-missing arguments to max; returning
+## -Inf</code></pre>
+<pre><code>## Warning: Too few values at 3924 locations: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+## 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...</code></pre>
+<pre><code>## Warning in max(matches$columns): no non-missing arguments to max; returning
+## -Inf</code></pre>
+<pre><code>## Warning: Too few values at 3923 locations: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+## 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...</code></pre>
 <pre class="r"><code># Make them numeric
-matches_seperated &lt;- japply(matches_seperated, c(create_column_names(gamelength, &quot;gold_diff_in_minute&quot;)), as.numeric )</code></pre>
+matches_seperated &lt;- japply(matches_seperated, c(create_column_names(max(matches$gamelength), &quot;gold_diff_in_minute&quot;)), as.numeric )</code></pre>
 <pre><code>## Warning in max(matches$columns): no non-missing arguments to max; returning
 ## -Inf</code></pre>
 <pre class="r"><code># Hooray it works:
 str(matches_seperated$gold_diff_in_minute_80)</code></pre>
 <pre><code>##  num [1:7058] NA NA NA NA NA NA NA NA NA NA ...</code></pre>
-<pre class="r"><code>matches$golddiff &lt;- NULL
+<pre class="r"><code># Make them categorical --&gt; somehow he doesn't want to do this when with surrounded with ', so do seperately
+# bans_seperated &lt;- japply(bans_seperated, c(create_column_names(5, &quot;bansblue&quot;)), as.factor)
+# bans_seperated &lt;- japply(bans_seperated, c(&quot;bansblue_2&quot;, &quot;bansblue_3&quot;), as.factor)
+
+# get rid of space
+bans_seperated$bansblue_2 &lt;- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_3 &lt;- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_4 &lt;- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_5 &lt;- substr(bans_seperated$bansblue_2, 2, 100)
+
+bans_seperated$bansblue_1 &lt;- as.factor(bans_seperated$bansblue_1)
+bans_seperated$bansblue_2 &lt;- as.factor(bans_seperated$bansblue_2)
+bans_seperated$bansblue_3 &lt;- as.factor(bans_seperated$bansblue_3)
+bans_seperated$bansblue_4 &lt;- as.factor(bans_seperated$bansblue_4)
+bans_seperated$bansblue_5 &lt;- as.factor(bans_seperated$bansblue_5)
+
+summary(bans_seperated$bansblue_1)</code></pre>
+<pre><code>##     'Leblanc'    'Malzahar'        'Shen'     'Nidalee'        'Ryze' 
+##           385           234           234           233           220 
+##        'Azir'      'Syndra'       'Jayce'      'Rumble'     'Kalista' 
+##           211           205           198           195           180 
+##      'Thresh'       'Elise'        'Zyra'        'Lulu'         'Zed' 
+##           173           165           138           134           121 
+##     'Caitlyn'       'Fiora'  'Cassiopeia'     'Taliyah' 'TwistedFate' 
+##           109           107           102           102            99 
+##      'Gragas'      'LeeSin'     'Alistar'       'Galio'      'Maokai' 
+##            97            96            95            94            91 
+##      'Kennen'     'Trundle'   'Gangplank'      'RekSai'       'Sivir' 
+##            89            89            87            86            84 
+##    'Vladimir'    'Kassadin'        'Bard'      'Graves'   'Lissandra' 
+##            83            81            78            77            77 
+##       'Varus'       'Ivern'     'Camille'   'TahmKench'        'Fizz' 
+##            77            76            75            75            68 
+##     'Orianna'      'Zilean'       'Corki'       'Braum'     'Kindred' 
+##            64            64            59            57            57 
+##       'Karma'      'Viktor'      'Rengar'      'Irelia' 'AurelionSol' 
+##            56            56            53            52            49 
+##       'Poppy'      'Lucian'        'Olaf'       'Xayah'        'Jhin' 
+##            49            48            48            47            46 
+##        'Ashe'        'Gnar'     'Morgana'     'Hecarim'      'Khazix' 
+##            44            43            43            42            42 
+##        'Ekko'      'Ezreal'      'KogMaw'       'Rakan'      'Twitch' 
+##            40            36            34            34            33 
+##    'JarvanIV'       'Annie'         'Jax'      'Anivia'       'Swain' 
+##            31            30            29            27            26 
+##       'Quinn'       'Urgot'    'Renekton'                   'Sejuani' 
+##            25            25            23            22            22 
+##      'Soraka'         'Zac'        'Ahri'       'Yasuo'      'Draven' 
+##            21            21            19            18            16 
+##    'Tristana'  'Blitzcrank'    'Malphite'    'Nautilus'       'Vayne' 
+##            16            15            15            15            15 
+##     'Chogath'      'Veigar'       'Ziggs'       'Diana'       'Janna' 
+##            14            14            13            12            12 
+##        'Kled'      'Illaoi'      'Xerath'        'Sion'       'Talon' 
+##            12            11            11            10             9 
+##     'Evelynn'    'Katarina' 'MissFortune'       'Brand'       (Other) 
+##             7             7             7             6            66</code></pre>
+<pre class="r"><code>bans_seperated$bansred_2 &lt;- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_3 &lt;- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_4 &lt;- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_5 &lt;- substr(bans_seperated$bansred_2, 2, 100)
+
+bans_seperated$bansred_1 &lt;- as.factor(bans_seperated$bansred_1)
+bans_seperated$bansred_2 &lt;- as.factor(bans_seperated$bansred_2)
+bans_seperated$bansred_3 &lt;- as.factor(bans_seperated$bansred_3)
+bans_seperated$bansred_4 &lt;- as.factor(bans_seperated$bansred_4)
+bans_seperated$bansred_5 &lt;- as.factor(bans_seperated$bansred_5)
+
+summary(bans_seperated$bansred_1)</code></pre>
+<pre><code>##         'Zac'     'Kalista'     'Leblanc'     'Nidalee'     'Camille' 
+##           622           467           462           366           312 
+##        'Ryze'     'Caitlyn'       'Elise'      'Rengar'    'Vladimir' 
+##           311           206           203           177           170 
+##        'Azir'   'Gangplank'       'Varus'        'Lulu'      'Rumble' 
+##           169           162           155           133           125 
+##        'Shen'      'Syndra'     'Alistar'      'Graves'      'RekSai' 
+##           124           118            96            95            93 
+##      'Thresh'       'Fiora'         'Zed'   'Lissandra'    'Malzahar' 
+##            80            78            76            75            75 
+##       'Galio'     'Taliyah'       'Sivir'        'Bard'  'Cassiopeia' 
+##            73            73            68            66            64 
+##      'LeeSin'      'Gragas'        'Fizz'   'TahmKench'      'Kennen' 
+##            63            55            54            54            53 
+##       'Poppy'       'Jayce' 'TwistedFate'      'Zilean'       'Ivern' 
+##            53            52            52            48            44 
+##     'Orianna'       'Corki'     'Kindred'      'KogMaw'      'Lucian' 
+##            43            42            42            41            40 
+##      'Maokai'    'Kassadin'     'Trundle'       'Braum'       'Karma' 
+##            40            38            36            33            33 
+##      'Irelia'     'Morgana'        'Ekko' 'AurelionSol'     'Hecarim' 
+##            32            32            31            30            30 
+##      'Viktor'        'Olaf'    'JarvanIV'       'Urgot'      'Anivia' 
+##            30            29            25            25            24 
+##        'Ashe'        'Gnar'        'Jhin'      'Twitch'        'Ahri' 
+##            24            24            24            24            23 
+##       'Xayah'                   'Chogath' 'Mordekaiser'       'Quinn' 
+##            23            22            22            21            21 
+##        'Zyra'      'Soraka'         'Jax'      'Draven'       'Janna' 
+##            21            20            19            14            12 
+##       'Yasuo'       'Ziggs'      'Khazix'       'Rakan'    'Renekton' 
+##            12            12            11            11            11 
+##     'Sejuani'       'Swain'        'Kled'       'Talon'      'Veigar' 
+##            11            11            10            10            10 
+##       'Annie'    'Nautilus'      'Xerath'       'Diana'      'Ezreal' 
+##             9             9             9             8             8 
+##       'Brand'     'Karthus'      'Rammus'    'Tristana'      'Illaoi' 
+##             7             7             7             7             6 
+## 'MissFortune'    'Pantheon'        'Sion'    'Malphite'       (Other) 
+##             5             5             5             4            41</code></pre>
+<pre class="r"><code># it would be cool if the first bans &amp; pick get a higher weight than the second bans for the popularity score
+# so first ban *5 + second ban *4 .. and so on (for both red and blue and pick and ban)
+
+# then just the score * the picks for each team and we got ourselves a perfect predictor (I hope)
+
+matches$golddiff &lt;- NULL
 matches_seperated$golddiff &lt;- NULL
 
 # may be interesting to make a red vs blue won dataset.
@@ -411,7 +538,7 @@ str(matches)</code></pre>
 ##  $ blueSupport     : Factor w/ 295 levels &quot;&quot;,&quot;Adrian&quot;,&quot;Air&quot;,..: 145 216 88 2 9 129 216 280 139 64 ...
 ##  $ blueSupportChamp: Factor w/ 53 levels &quot;Ahri&quot;,&quot;Alistar&quot;,..: 18 24 3 47 18 3 18 3 18 33 ...
 ##  $ goldblueSupport : Factor w/ 7058 levels &quot;[475, 475, 532, 684, 838, 971, 1104, 1275, 1408, 1522, 1692, 1826, 1975, 2207, 2352, 2617, 2951, 3508, 3827, 41&quot;| __truncated__,..: 6557 6154 6713 5838 6461 6603 7037 6556 6529 6642 ...
-##  $ blueBans        : Factor w/ 6725 levels &quot;['Ahri', 'Corki', 'Ryze']&quot;,..: 4571 2525 1957 148 1838 3228 6508 3276 1945 4555 ...
+##  $ blueBans        : chr  &quot;'Rumble', 'Kassadin', 'Lissandra'&quot; &quot;'Kassadin', 'Sivir', 'Lissandra'&quot; &quot;'JarvanIV', 'Lissandra', 'Kassadin'&quot; &quot;'Annie', 'Lissandra', 'Kassadin'&quot; ...
 ##  $ redTop          : Factor w/ 278 levels &quot;&quot;,&quot;3z&quot;,&quot;957&quot;,..: 35 93 99 187 49 202 90 36 99 70 ...
 ##  $ redTopChamp     : Factor w/ 78 levels &quot;Aatrox&quot;,&quot;Akali&quot;,..: 16 22 63 16 63 16 53 56 27 16 ...
 ##  $ goldredTop      : Factor w/ 7058 levels &quot;[475, 475, 531, 700, 1018, 1314, 1586, 1911, 2113, 2341, 2572, 2922, 3243, 3567, 3979, 4229, 4755, 5146, 5390, &quot;| __truncated__,..: 295 708 939 320 743 599 1119 228 318 128 ...
@@ -427,7 +554,7 @@ str(matches)</code></pre>
 ##  $ redSupport      : Factor w/ 295 levels &quot;&quot;,&quot;Adrian&quot;,&quot;Air&quot;,..: 139 129 32 280 64 2 88 10 31 145 ...
 ##  $ redSupportChamp : Factor w/ 54 levels &quot;Alistar&quot;,&quot;Annie&quot;,..: 45 2 15 15 2 45 31 5 30 30 ...
 ##  $ goldredSupport  : Factor w/ 7058 levels &quot;[475, 475, 532, 646, 761, 875, 989, 1102, 1366, 1496, 1670, 1958, 2122, 2549, 2685, 2879, 2992, 3315, 3430, 369&quot;| __truncated__,..: 5956 6673 6737 6562 11 6148 6959 5931 7004 6568 ...
-##  $ redBans         : Factor w/ 6440 levels &quot;['Aatrox', 'Nidalee', 'Alistar']&quot;,..: 5169 4032 3085 4077 4366 267 4026 3848 4337 4036 ...
+##  $ redBans         : chr  &quot;'Tristana', 'Leblanc', 'Nidalee'&quot; &quot;'RekSai', 'Janna', 'Leblanc'&quot; &quot;'Leblanc', 'Zed', 'RekSai'&quot; &quot;'RekSai', 'Rumble', 'LeeSin'&quot; ...
 ##  $ Address         : Factor w/ 7058 levels &quot;http://matchhistory.br.leagueoflegends.com/pt/#match-details/ESPORTSTMNT02/300266?gameHash=aa0e58f00d1d18e0&quot;,..: 4237 4238 4239 4240 4241 4242 4243 4244 4245 4246 ...
 ##  $ winner          : chr  &quot;blue&quot; &quot;red&quot; &quot;blue&quot; &quot;red&quot; ...
 ##  $ YearSeason      : Date, format: &quot;2015-01-01&quot; &quot;2015-01-01&quot; ...</code></pre>
@@ -595,22 +722,14 @@ summary(matches)</code></pre>
 ##  [475, 475, 538, 671, 821, 958, 1104, 1259, 1403, 1542, 2082, 2208, 2334, 2660, 2962, 3118, 3243, 3434, 3560, 3848, 4100, 4286, 4441, 4572, 5028, 5455, 5581, 5881, 6212, 6368, 6740, 6882, 7574]                                                                    :   1  
 ##  [475, 475, 539, 675, 832, 983, 1170, 1325, 1493, 1649, 1785, 1941, 2077, 2223, 2349, 2475, 2616, 2758, 2989, 3115, 3240, 3417, 3698, 3869, 4040, 4175, 4302, 4459, 4649, 4866, 5170, 5306, 5446, 5902, 6029, 6155, 6282, 6505, 6680, 6846, 6993, 7127]              :   1  
 ##  (Other)                                                                                                                                                                                                                                                             :7052  
-##                                 blueBans           redTop    
-##  []                                 :  22   CuVee     : 151  
-##  ['Bard', 'Kassadin', 'AurelionSol']:   5   Smeb      : 151  
-##  ['Azir', 'Corki', 'Gragas']        :   4   Hauntzer  : 149  
-##  ['Nidalee', 'Varus', 'Gangplank']  :   4   Ssumday   : 148  
-##  ['Rumble', 'Kassadin', 'Lissandra']:   4   Vizicsacsi: 135  
-##  ['Trundle', 'Kindred', 'Ryze']     :   4   Impact    : 127  
-##  (Other)                            :7015   (Other)   :6197  
-##    redTopChamp  
-##  Maokai  : 827  
-##  Gnar    : 594  
-##  Shen    : 574  
-##  Rumble  : 492  
-##  Nautilus: 385  
-##  Poppy   : 370  
-##  (Other) :3816  
+##    blueBans                redTop       redTopChamp  
+##  Length:7058        CuVee     : 151   Maokai  : 827  
+##  Class :character   Smeb      : 151   Gnar    : 594  
+##  Mode  :character   Hauntzer  : 149   Shen    : 574  
+##                     Ssumday   : 148   Rumble  : 492  
+##                     Vizicsacsi: 135   Nautilus: 385  
+##                     Impact    : 127   Poppy   : 370  
+##                     (Other)   :6197   (Other) :3816  
 ##                                                                                                                                                                                                                                                                                               goldredTop  
 ##  [475, 475, 531, 700, 1018, 1314, 1586, 1911, 2113, 2341, 2572, 2922, 3243, 3567, 3979, 4229, 4755, 5146, 5390, 5718, 6168, 6593, 7102, 7533, 7730, 8249, 8665, 9405, 9906, 10297, 10411, 10951, 11381, 11802, 12481, 13087, 13758, 14997]                                                         :   1  
 ##  [475, 475, 531, 720, 1079, 1315, 1694, 1993, 2303, 2595, 2866, 3150, 3403, 3826, 4054, 4318, 4683, 5208, 5512, 5889, 6210, 6529, 6912, 7378, 8442, 8556, 9189, 9672, 10232, 10475, 10589, 10733, 10933, 11390, 12132, 12827, 12941, 13055, 13747, 14247, 14792, 14961, 15450, 15864, 16473, 17396]:   1  
@@ -683,14 +802,14 @@ summary(matches)</code></pre>
 ##  [475, 475, 532, 662, 796, 930, 1079, 1194, 1479, 1593, 1727, 1871, 2186, 2381, 2546, 2661, 2995, 3368, 3519, 3678, 3844, 4309, 4452, 4596, 4896, 5069, 5183, 5298, 5458, 5945, 6060, 6173, 6327, 6523, 6682, 6966, 7154, 7268, 7965, 8109, 8222]            :   1  
 ##  [475, 475, 532, 713, 826, 940, 1085, 1230, 1386, 1509, 1733, 1848, 1978, 2112, 2248, 2382, 2540, 2656, 2912, 3026, 3139, 3253, 3432, 3546, 3729]                                                                                                            :   1  
 ##  (Other)                                                                                                                                                                                                                                                     :7052  
-##                            redBans    
-##  []                            :  22  
-##  ['Kalista', 'Gragas', 'Ryze'] :   9  
-##  ['Kalista', 'Ryze', 'Alistar']:   8  
-##  ['Azir', 'Ryze', 'Vladimir']  :   7  
-##  ['Nidalee', 'Ryze', 'Kindred']:   7  
-##  ['Kalista', 'Ryze', 'Gragas'] :   6  
-##  (Other)                       :6999  
+##    redBans         
+##  Length:7058       
+##  Class :character  
+##  Mode  :character  
+##                    
+##                    
+##                    
+##                    
 ##                                                                                                         Address    
 ##  http://matchhistory.br.leagueoflegends.com/pt/#match-details/ESPORTSTMNT02/300266?gameHash=aa0e58f00d1d18e0:   1  
 ##  http://matchhistory.br.leagueoflegends.com/pt/#match-details/ESPORTSTMNT02/300276?gameHash=bc00457a5072a5a5:   1  
@@ -764,7 +883,7 @@ summary(matches)</code></pre>
   geom_point(alpha = 1/6, color = 'red', position = position_jitter(h = 0)) +
   xlim(16, 80) </code></pre>
 <pre><code>## Warning: Removed 2 rows containing missing values (geom_point).</code></pre>
-<p><img src="data:image/png;base64,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" /><!-- --> Not much to see, the games are getting longer, but also much more data so no real conclusion to be made</p>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAHgCAMAAABNUi8GAAABU1BMVEUAAAAAADoAAGYAOpAAZrYzMzM6AAA6ADo6AGY6kNtNTU1NTW5NTY5NbqtNjshmAABmOpBmtv9uTU1uTW5uTY5ubo5ubqtuq+SOTU2OTW6OTY6Obk2ObquOyP+QOgCQkGaQtpCQ27aQ2/+rbk2rbm6rbo6rjk2ryKur5OSr5P+2ZgC225C22/+2///Ijk3I///bkDrb/7bb///kq27k///r6+vuw8PxoqLzh4f1cHD3XV34TU35QED6NTX7LCz8JSX9AgL9AwP9BAT9BQX9Bgb9Bwf9CAj9Cgr9DAz9Dw/9EhL9Fhb9Ghr9Hx//AgL/AwP/BAT/BQX/Bgb/Bwf/CAj/Cgr/DAz/Dw//EhL/Fhb/Gxv/ISH/KCj/MDD/Ojr/Rkb/VFT/ZWX/eXn/kpL/sLD/tmb/yI7/1NT/25D/27b/29v/5Kv//7b//8j//9v//+T////7V9tkAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAeFElEQVR4nO2d/X/TxpaH0zfuNm0vS9sttLvpvVvu3ruwW2ALeCSNx1IcR5Fl2ZS8kXcc2xB2Q4r+/5/2jGQndgjBzgvR4XxPPrHkmdE3j0ZPJNkkYSpFoQpcU1cNgEKdVhAUVeiCoKhCFwRFFbogKKrQBUFRha7zCfr4PHW+rZH6IUM/fCoE/VhTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhHr5gqJQl1w4g35sqYxQcYmXmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiPUAgiqlHpHh+v2DsdordVj13Wz4Vr72jdaJQFVzXddP8rWorhml0H2zFY1OKlaJ7aeoUbibWrYX6/1e2qJX+2v5E1h7Oc9sfHjiIZHOqkFtTj2jWviOI4iXynfT4zxaYf9KFyMYleZiIbQDj92tTa+75rEPtMufWiaE1cp4xuaFkONhj60Uq42bn9e7az155Mmjz4HB921c5odgPwYqCzqnUfpnQdq4MtYR3XSunJBValUOnFflKNUV/XHeJ7neDTvStNw45TLjbLxFqqz9tjXk6RZnZ0d8vI9dWGCvit1WNz5/jKHm50L6vlKrd6sBdWFkL6t5oO5etPESaU+F/nNZtOrJIlfKXv1ZjK3GDWTZhzWa3N17fmuU0nKXpSYZt1UytoznkeKKq+iPU0T4ppmWTd1mWZLe652stnLrOzPp+c4yimp/KC4ruN4yh4Ax7HHgAZQ0zsOxmDQmCq986hOXBD0ogqCjnNUJy4IelEFQcc5qhPXlQuKe1Dcg46deqzrwwh6RjqkFiz0o30Vf0Y6pBYsFIJeWIlPZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiPU8wq6/+309EyaHtya/uZR9vz7++nDaVszELSwqYxQzynowY930v3v7ry5PZM+/DM9fzn99f2s42Xu68SCKqWGV9Ps0dU6a1Wua+LYPH5MS2O0onaTRGGU+L4fx0EQmKQWZNVfBLq/DKrVfBnZnlZwQtWSk1pPrNqJrTa11v8yoemvDJZBFBIELRNCDLOeuBokmuj9WsYXmsd+EoZh7CodV8NqUE2MCaPFxNduHNZ8o11FM6DtritFu+0bVyk/SexMaK0fK00tdr5ompR9YjRtovJ5c7PPkYNO47KP/oh+px3n2i+VJR0djbxsSN527ECNqvTWdpMf/cM6n6AvrZX3Zg5+up+dO+999Y/v7w/EPYugqlQqqaHV1D5q13E8O2OOMnGlbA+Mptkvl7VXjuN4PooXmo2FYHY2DKq1ufebdLKg5653pM72lzkYuRmH/YZ6XAviSv/ZfCMOy8n8XKORVBr1BrHXgziqh2u1SiVsNOJ5v+w69sOaWmn4SWPBaK9ZNklMC89xjFf2yNNSieZKeeWy5/vU4NB00ry5rkdqOYPDn2bz6yiPPvoj+p12rNb0ZRTNvOMcHo28yE7Xy9qOH6gRlYY6z3r0j+r896Ak4/4Pj/pO7ueCZqfTNP2C6vSNj1Vvb2+vN7xqH9udbneXWnvd3s7a9vOtnU6vvbPTfv68vft8bW1taXVtZXN9pfXkyXLr98WnraFabF19Pekvc7DlVmttud/wbG2xtbbdf7a0vrb8fGPp6fr6xvb6s3Vif9ZaW322vLa4vb28vr62tPW807UfWzvtzvb61sb6yk57d/P5zsYaLXa73Z3d57vtdntvj+aqt/v8+e7WFjV07Rx2e53ObqdDy5Gp7vZ26aM/ot9px7bb9GV6NPPd7uHRyKvT63V2s7a3DtQ7juJZj/5Edbqgb27fzC7ow4IOnUBxBu0vcQad5Ogf1XnPoAe3bpKWx86gR3eguAft9+IedLKjf1jnfhVvX60P7kEHgt67eTTiTKRj0CG1YKGFfBWf+5ld5vPbzkzQN387usJD0AKmMkI9p6CDtzxH3gcduQWFoAVMZYSKf0mSmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYR6+YKiUJdcOIN+bKmMUHGJl5jKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYioj1KIJqpQ6ic51Xepzs6IRSrnZOG18ow216cSPk9jXxoS1IAyTJA6yiqvBCdWiz6R2vPXEoScOCAdrteFtbOogNOx//WrYX5pBR+KH2Waxn6dEvqujsFYNY1f5cRQnvvtYaT8MI+26xiRbdk37se/bXTVG+76m3ac9TxLjatuqswmhMbFP02LXtKu0dofm0k5bPnXZFKd2LrOt7CKb9KzhXQdkMN9DB2goPNucPtNB4+jifcf4PVUsQVWpVBqm72+dzbtyaO5pRp2SW3KUQ+O0pyt+RWttKqbeiJrNhh8tkBMLUS2YPcW01vtUPFONlbpQDeok7Ww4GyxkDWE9bsQLwWy9ETebzXg+KRvtlev1elInGxN/aaHuzzcqlXqjYhqkZ6NM5bllv5n4Jml6laTseDQhutJsNCu+V/J02SvriuNo73Auaf7csrJTp7Ip7tFcKoe2cu2s2hbXNpzgTXZAVH++hw7Q0IHKNrdP037j6OK9x/g9BUEvqiAoBIWgEHS468MLintQ3IMeq4IJOj4dUgsWKuNV/Ph0SC1YKAS9sBKfyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQJxb01bUpW5/+CkH5pjJCnVTQP37+HGdQ9qmMUCcV9PX1GxCUfSoj1MnPoBCUfyoj1InvQV+Mf/cJQYuaygh18kv8FF4ksU9lhIq3mSSmMkKFoBJTGaFOLugDe4X/EoJyTmWEOrGgD+zd5+vr4xt6WXRILVhoMQTtvw86wWv5y6JDasFCIeiFlfhURqi4xEtMZYSKF0kSUxmh4m0miamMUCGoxFRGqBMLSq+SXl+f4F86IWgBUxmhTizo3c/t66QH4/9U6GXRIbVgocUQlE6g9meW8TYT61RGqGcQ1L7HBEFZpzJCnfwHlr988ckv9kIPQfmmMkKd+B701bWpz9O7n/0GQRmnMkLF20wSUxmhQlCJqYxQz3KJx698cE9lhHqGF0l//Hzj6JeP97+dnp5J04Nb0988yp5/fz9N39ye/uoOBC1uKiPUs/y43d0v0xf9V0kHP95J97+78+b2TPrwz/T85fTXJOi9mfRl7uuZBFVKDRapcl1lV1zXtS2uMUbZhTba164ySRTFvqviKIjDODZJGNiKdRJUa7UgCP24Ss9rxs07qIWet+xKbaghe95fHtVgROz2V6I8pOrHg237Q2phaFPDKMl7fOVH1awvIgAb7Mf50ChJ7NNqNTQEG9USn/YhiRPaC5/2JfETn/bN+CZb0MpybGi/tc6euq5OEqNdnc1QNk/UZ6fGlpuvuFpTu45jX9m5c3U+hWpobvODQqk6j1D5Jw09HDj2YTp6kp7Ucco249UZBH1w9Eb9S2vlvZmDn+5n5857X/2DHu2zc1ziValUUv1Fz1HKc0olbWdalRxDc1p2PO1WTNMr66YVtNE0C82wHizMV2q12Tk6/POzs7XYrszNBllDLRoxr3VcxdNr9mj1LYlHUwfizs834vn+en0ui+iHDL4dFurVOKbPqFL3TbwQxfXGQkQ7U08qfkP7Tb9CH4Z6tpu+X/KyfbWO0mNS0Y5HM5RNkCp5jqtyMe0cWU0dx1O6Wa40m4pWXUdTi5PN6WBus4NCE+t5no0olVz76dCH1x849mEaepKe0HHKNmPWGf6pk+x8MPQ+E51F9394lJ1M80v8/g9/71/iv6B6173pO6u3t7fX6y963V5vt7u31+71ep3eXnen3W4/7+62O9s7m7vP25s7G6ur65s7K5vLz1orS9uLi0+etlqtpSdPFtfsytMnraxhcbV1jnpytPr76SPX+sulpfW1pf76s6dZRD9kuZ+w8uz3tTX6XN1+trWztrK69mx9ZZV25tnG9tZ6e2tza5s+dqhne3Nra28329ed9s4OPW5st7u7NEP5BO3tdju9jp23jp0jWnS63d1ee/P59uZmj1Y73Ta1dLM5HcxtPs+73d3dXRuxt9exn1362O0eDRjrML39ZKTjlG0urkYEpZvQ9O7UJ78cNry5fTO7oA8J+u1MapXNa8JvGJxBcQYdqfO+zXRw62aaHj+DDp6dSVDcg+IedKjOKag9W6bp4B40F/Tg384n6Hh0SC1YaDFexWe/8nHj8BY09zO7zGev4nNN753rEj8mHVILFloQQe9+9j/5T9xl9XDa1syx90Hp2deHL+Qviw6pBQsthqDZj9vdwI/b8U5lhApBJaYyQp34Ev/AXuLxe/G8UxmhTv4i6QV+L559KiNU/LidxFRGqBBUYioj1AkFffDJL9lfAcclnnUqI9TJBLW/L2ffA8WLJN6pjFAnEtT+oEj66toN+1p+7N+auyw6pBYstACCZj9Ib8+ieB+Udyoj1MkFzU6eEJR1KiPUCS/xN/r/WecEvxh/WXRILVhoAQS1Z8/sFvTF1Pj/IeJl0SG1YKFFEDS9a99h+uPnoR+oh6AMUxmh4o16iamMUCcVFP/b8ceQygj1DD9uB0HZpzJCPcOP243/h+0gaEFTGaFOfgbFf8fNP5URKl4kSUxlhApBJaYyQp1YUPz5xY8glRHq5G8zjf75RQjKMZUR6lneZhr684sQlGUqI9SzCPoA/08S81RGqBPfg7795xchKLtURqgTC/rWn1+EoPxSGaHibSaJqYxQIajEVEaokws68ucXISjLVEaok79IGvnzixCUZSoj1DO8zYS/bsc+lREqBJWYygj1DD8Pij+/yD6VEerkL5Lw5xf5pzJCxdtMElMZoUJQiamMUCcS9PU/T/j7SBC0mKmMUCcT9PoEf1EEghY3lRHqhJf4BxP8KD0ELWwqI9TJf6J+klfwELSYqYxQz/g2E34niXUqI9TJ/yUJZ1D+qYxQJxT0Lu5BP4ZURqh4FS8xlREq3geVmMoIFf+SJDGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhXr6gKNQlF86gH1sqI1Rc4iWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCJWHoEqp4VbXdbMmRSuu1q7tdLUxtGp839eGGo1JksRVykRRnMS+G9WCMIwSk0RBtFwNgmotChNahnEtsBUZP8rWYj8K8paomi1rJsmHBLV8Gfp5B63Q0GzdbtKiz8G2cWgfq0EtMnZI6BvT3ySOq2FiIiIycRTWIl+52ifUhICjMAyqEaH7RB0aTftntmLfNuR7qbRvNPXSftFmrksDNO21nR1l1+y0uC5NQTbAtY/9gUPzR5PTOz6jb9d7B7zzYF1wcRBUlUql4RmmydPU5Do0+drzaEnOesaUy76pNCtNbcoVHSe+8b1K4sfzYaUSkAzBfJiEYRiTSpmh88FcEAbBQL6FXK7Z4K0K327qV3Woq5U72a8sZpa+KDkXzNWTfvNcEDQXajW/2YySZjgbxY2mrlSSOPaTKI7ngtp8NE87UUuiRlyuKONvVpoN35Sbdi+VV/ZMw6c9dRx6rl3P1WVd9rySUo5b1vS05Lh+uVI2nuOQlp5Tygc6R/Pnuo6z647O6Nul3jfgnQfroguCQtATCoJOQgdBIeiJXUURFPeguAc9saswgl5wiU9lhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVEep5Bd3/dnp6Jk0Pbk1/8yh7/v39NH04PT399X0IWthURqjnFPTgxzvp/nd33tyeSR/+mZ6/zMS8N3M5Z1Cl1GDFdV2VLY0xtEpL7SqtXW2iOKYWV/txnNDzJPFdP0mMiaPEN4mJgiBYDKuxSaIgrEWx8aOoVg2CyJiwWqNO308Ceh5EruvTMoyN0XFoh4TUXU1sbGJTaN1ok9jGiBpqrSBIXD+2PTTEblsN6StHcUibEqCfaItqjG1LbGoSJ5bMp32w0PkIrYjA+DTC7qVK7cNj16VNH9NCq6w123WaDeXSbru2azA/ee/IdKmsbI/uj0wfZxOo8hHZ4+HcHpvst9qPHYr3H6xz1vkEfWmtvDdz8NP97Nx576t/0OObv925FEFVqVTKJ63k0PQ6ipZGa2OU52nX0xXH8StJUm+SOLrSaDaSit/QfjNu+iaKmknUiA3JMhe0gnq9GoYLQa3WDOd9UmyW7Ks2FqhzPlio0SDqCpOFOVJ1IfEXbE9gh80FwULDzGVKB/MhJdParO2cp9SI8uasoAvxPG07G8zPR1FiF/PzxlRMg76DmuRwlCzQ9029EtcjMjSp0DdLpZLE2QjjNMoVP2oQc8VTyunQbjpa0beaVc91PMe22l1XTsl16KNsvz8H8+Pa4WpkumjpOFmP9tx8ZEpjXNexzSofdzi3xyb7rfZjh+L9B+u8df57UDqL7v/wKDuZ5pd4ut5n1/00/YLq9I0nqd7e3l4vX+l2Or1uj5Y77fbOTm93t93ZbW93u1vbGxvPNjeodXt9c31je2u9vbW5trm1s7q6ubG6vraz3Go9bbVaz579vry80lpc3Fxe2lpstZ60lhd/X1+hzqXWyiINoq7ljZWnrd9bKxtbK7anZYfRtivrO09XF3+nhqVlSqa1J7ZziR5WKc+mt1bWlmjbJ62lpdXVDbtYWtrZ2d5Zb7c7m52ttdWNlY2NrWfba89WN6i2dzZWt7c31rIRO93159tbq+vEvL3b63U7tJvddq/dafdonzvd3a5ttbve6+51qLvzvNPrdQbzkw3vjUwXLbvdrKe928lHpjSm0+na5l4+7nBuj032W+3HDsX7D9YHqNMFfXP7Zvrym2FB6Zo/dBa9uG8fnEFxBh3tGkfQg1s3ScuRM2hWh/ehF0iHe1Dcg450jSHo/rdWxME96CULelElPpUR6jkFzf3MLvPZq/hMUHvBf/MfeJupuKmMUM8pqH3H074geut90K8OX8hfFh1SCxZaSEHHqMuiQ2rBQiHohZX4VEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoUJQiamMUCGoxFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhQlCJqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI9TLFxSFuuTCGfRjS2WEiku8xFRGqBBUYiojVAgqMZURKgSVmMoIFYJKTGWECkElpjJChaASUxmhshJUKdVf0dodNLn9xsPOkcHU77paa/WYVlS/MdXGP3wysqEd5GpDG2ga8JgWebdtz79U9mhDlc7aaCN6YjftuGowzlYWkFXePwI7tCvUZrdR6pB4ZD/SPtVbc/D+evfQD6TSBKwTpA51FUxQVSqVcqU8x8kPuio5yskaDztHBlM/qVL2HM91lHLcfFDb054ZPBneUNGgsvZ0pVy2G2jHcYzttu30NelLufYLOh4pU6Zkz26aKUmb9ig/H5d9T9gnWWjePwI7tCvU5lGiUyq5feLR/UhzKkcN79ZYdcrQDyPoBKwTpA53QVAIOkFBUAgKQUe6CiYo7kFP2M1TCvegH1rQiyrxqYxQIajEVEaoEFRiKiNUCCoxlREqBJWYyggVgkpMZYQKQSWmMkKFoBJTGaFCUImpjFAhqMRURqgQVGIqI1QIKjGVESoElZjKCBWCSkxlhApBJaYyQoWgElMZoV6+oOeqL67uS09cjFgZoY7DCkHHKkasjFAh6IUVI1ZGqBD0wooRKyPUgguKQr2/ICiq0AVBUYUuCIoqdEFQVKHrSgTd/3Z6eiZND25Nf/PoKr7+ZPXmNhPWN7env7rDA9Uq8PX9cVivQtCDH++k+9/dsQf+4Z+v4OtPWA/pm4kF672Z9OU3j1igWgUejsV6FYK+tEj3Zg5+up/uf3//CgAmqv1/+deZlAOrZewvio6a7v/wyIKOwXpV96D0LZRB0ndSsevN3/6Tvs05sO7/8Hd7ieeAOjiDjsF6RYK+uX3TXo6KP5Ppw5v2OsSBdf/b7BuJA+rg5nMM1qsR9ODWzZTHtzpBvmFzBn3E5sJEL0HSl1/fL+oZ1H6vM7lZejht6yYH1oN/y442B9TBqbOg96C5n9llvvAvN9P8bSYWrPdm8hM+A9T+GXQM1qsQND8rzfB4w47R+6DEON57iwWol9NjvmeLf0lCFbogKKrQBUFRhS4Iiip0QVBUoQuCogpdEBRV6IKgqEIXBP1Q9epPv7yz73//+9RuyQVBP1SdYqDtgqAnFwT9UAVBz1QQ9CLq9fWpT/76T7+mr65NTU19SbL9lVa+tM9upOkfP09NffprZuDh6l/zrny7/8oG/+kvU1kbaqQg6AXU6+tf0uenv76+ToI9+PTXV9c++y19MGUfPv31j58/p8bPfiNBD1ev5V2D7bIzaL/tqvelaAVBL6BeWK9Irv/7Lc2u16+ukaj5w59+yTpJ3eHV4a4HA0FvnP5CSmhB0AsoOimSXHSJT1/QZfqTXzLPBg8PprL6cnQ17+pvd3gPCkHfKgh6ATUQ7fX1TzLTRgW1nenxVQg6ZkHQC6jsUk0PL6xwL46dQel5Nmh09egS/+JTCHpKQdALqMGLHSvgq2vHBP3jZ9I2t3ZoNesafnEFQU8uCHoRZd8u+gudDu/SHei/Z6+HjgTN3lvKL/3Dq9nD0XafQ9CTC4JeVL3o32B+qO2EFAS9gLKX9uw9zg+0naSCoBdR9v2js3h21u0EFQRFFbogKKrQBUFRhS4Iiip0QVBUoQuCogpdEBRV6Pp/cVCY44oNZeIAAAAASUVORK5CYII=" /><!-- --> Not much to see, the games are getting longer, but also much more data so no real conclusion to be made</p>
 </div>
 </div>
 <div id="how-do-winning-teams-differ-from-losers" class="section level1">

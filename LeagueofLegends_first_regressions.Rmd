@@ -68,7 +68,7 @@ cuberoot_trans = function() trans_new('cuberoot',
 create_column_names <- function(columns, namestring){
   maxnr <- max(matches$columns)
   vectofnr = c();
-  for (i in 1:81){
+  for (i in 1:columns){
     # print(i)
     vectofnr[i] <- paste(namestring, as.character(i), sep="_")
     # print(vectofnr)
@@ -101,6 +101,8 @@ matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
 matches$goldblue <- remove_first_last(matches$goldblue)
 matches$golddiff <- remove_first_last(matches$golddiff)
 matches$goldred <- remove_first_last(matches$goldred)
+matches$blueBans <- remove_first_last(matches$blueBans)
+matches$redBans <- remove_first_last(matches$redBans)
 
 
 ## 0.4.4 Square the data if scewed 
@@ -129,13 +131,52 @@ summary(matches$YearSeason)
 ```{r "0.6 Making subsets"}
 # It gets messy very easily so extra dataset instead of extra variable:
 matches_seperated <- matches %>%
-  separate(as.numeric(golddiff), into = c(create_column_names(gamelength, "gold_diff_in_minute")), sep = "\\,")
+  separate(as.numeric(golddiff), into = c(create_column_names(max(matches$gamelength), "gold_diff_in_minute")), sep = "\\,")
+
+bans_seperated <- matches %>%    
+  separate(blueBans, into = c(create_column_names(5, "bansblue")), sep = "\\,")%>% 
+  separate(redBans, into = c(create_column_names(5, "bansred")), sep = "\\,")
 
 # Make them numeric
-matches_seperated <- japply(matches_seperated, c(create_column_names(gamelength, "gold_diff_in_minute")), as.numeric )
+matches_seperated <- japply(matches_seperated, c(create_column_names(max(matches$gamelength), "gold_diff_in_minute")), as.numeric )
 # Hooray it works:
 str(matches_seperated$gold_diff_in_minute_80)
 
+# Make them categorical --> somehow he doesn't want to do this when with surrounded with ', so do seperately
+# bans_seperated <- japply(bans_seperated, c(create_column_names(5, "bansblue")), as.factor)
+# bans_seperated <- japply(bans_seperated, c("bansblue_2", "bansblue_3"), as.factor)
+
+# get rid of space
+bans_seperated$bansblue_2 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_3 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_4 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_5 <- substr(bans_seperated$bansblue_2, 2, 100)
+
+bans_seperated$bansblue_1 <- as.factor(bans_seperated$bansblue_1)
+bans_seperated$bansblue_2 <- as.factor(bans_seperated$bansblue_2)
+bans_seperated$bansblue_3 <- as.factor(bans_seperated$bansblue_3)
+bans_seperated$bansblue_4 <- as.factor(bans_seperated$bansblue_4)
+bans_seperated$bansblue_5 <- as.factor(bans_seperated$bansblue_5)
+
+summary(bans_seperated$bansblue_1)
+
+bans_seperated$bansred_2 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_3 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_4 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_5 <- substr(bans_seperated$bansred_2, 2, 100)
+
+bans_seperated$bansred_1 <- as.factor(bans_seperated$bansred_1)
+bans_seperated$bansred_2 <- as.factor(bans_seperated$bansred_2)
+bans_seperated$bansred_3 <- as.factor(bans_seperated$bansred_3)
+bans_seperated$bansred_4 <- as.factor(bans_seperated$bansred_4)
+bans_seperated$bansred_5 <- as.factor(bans_seperated$bansred_5)
+
+summary(bans_seperated$bansred_1)
+
+# it would be cool if the first bans & pick get a higher weight than the second bans for the popularity score
+# so first ban *5 + second ban *4 .. and so on (for both red and blue and pick and ban)
+
+# then just the score * the picks for each team and we got ourselves a perfect predictor (I hope)
 
 matches$golddiff <- NULL
 matches_seperated$golddiff <- NULL
