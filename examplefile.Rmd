@@ -1,0 +1,1828 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+Who are the excessive gamblers?
+========================================================
+#### Table of content (type of analysis)
+Section 0: preparing data (no results shown)  
+Section 1: exploring variables and relations (mostly univariate and some
+bivariate)
+Section 2: exploring differnces between RG and control (bi- and multivariate)  
+Section 3: other relations between variables (bi- and multivariate)  
+
+####Research questions
+**- Are the gamblers evenly distributed over their demographic variables **
+**(section 1.1, 1.2, 1.4)?** **- Are the two control groups evenly distributed**
+**over their demographic variables (section 1.3)**  
+**- How do fixed-odds sports betting gamblers who end up in the Responsible**
+**Gambling (RG) Programme compare to the control group? (section 2)**  
+  - do they spend more time gambling in each of the games (bettingdays)?  
+  - do they spend more money on gambling (sum_bets)?  
+  - do they play at higher stakes (sum_stakes)?  
+  - do they lose (or win) more money (net_loss)?  
+  - do they gamble more frequent (frequency (= active days) times bets_per_day)  
+**Can we see more 'logical behaviour' in the control group vs the RG group? ** 
+  - boredom: how does registration date relate to gambling activity for the RG 
+  group as well as the controll group (section 3.1)?  
+  - reasonable spending: does more bets mean less money when we compare the
+    groups?  
+
+#### Meaning of non-obvious variables in data set
+
+CountryName: Country of residence  
+LanguageName: Preferred language  
+sum_stakes_fixedodds: Sum of all stakes  
+sum_bets_fixedodds: Sum of all the bets  
+bettingdays_fixedodds: Total active betting days  
+duration_fixedodds: Days from first to last betting day  
+frequency_fixedodds: Duration devided by betting days  
+bets_per_day_fixedodds: Bets made per active day  
+net_loss_fixedodds: All loss or profit  
+  
+> **Data source**: These datasets are based on electronic records of the entire
+bwin.party betting history of 2,068 subscribers who triggered a responsible
+gambling intervention between November 2008 and November 2009 (i.e. RG cases)
+and 2,066 individuals who made an initial bwin.party deposit on the same day as
+an RG case, but did not trigger a responsible gambling intervention between
+November 2008 and November 2009 (i.e. controls). This data can be downloaded
+from http://www.thetransparencyproject.org/download_index.php
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, "0.1 packages"}
+library(ggplot2)
+library(bitops)
+library(RCurl)
+library(ggthemes)
+library(foreign)
+library(grid)
+library(RColorBrewer)
+library(gridExtra)
+library(reshape2)
+library(stringr)
+library(scales)
+library(dplyr)
+library(GGally)
+library(memisc)
+library(lattice)
+library(MASS)
+library(car)
+library(survival)
+library(knitr)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, "0.2 Load_the_Data"}
+# Source: http://www.thetransparencyproject.org/download_index.php
+# getwd()
+
+# PC:
+# setwd('C:/Users/Gebruiker 1/Dropbox/Data analyst/Lesson 5 R leren/project')
+# laptop:
+setwd('C:/Users/User/Dropbox/Data analyst/Lesson 5 R leren/project')
+
+# Txt file does not work:
+# mydata = read.table("Dataset.txt")
+gam <- read.spss("Dataset.sav", to.data.frame=TRUE)
+
+# before the datetime correction I first make another set for n/a --> zero
+# correction later on
+gamble = gam
+
+# To read the dates in this file in a correct manner, I found I had to use this
+# dat. file, but this has different notation of RG_case and gender than the one
+# we used most of the time (.sav)
+gambl <- read.table('Dataset.dat', sep="\t", header = TRUE)
+```
+
+```{r}
+
+ls()
+
+```
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, "0.3 Functions"}
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+cuberoot_trans = function() trans_new('cuberoot', 
+                                      transform = function(x) x^(1/3), 
+                                      inverse = function(x) X^3)
+
+
+```
+
+
+```{r echo=FALSE, warning=FALSE, results = "hide", "0.4 Data Wrangling"}
+## 0.4.1 RG_ keeps missing...
+
+# a dataframe with RG & age apart, over age using chains
+data_per_age_RG_duration <- gam %>%
+  filter(!is.na(age_at_registration)) %>%
+  group_by(age_at_registration, RG_case) %>%
+  summarise(fixed_odds_duration_mean = mean(bettingdays_fixedodds,
+                                            na.rm = TRUE),
+            fixed_odds_duration_median = median(bettingdays_fixedodds,
+                                                na.rm = TRUE),
+            n = n ()) %>%
+  ungroup() %>%
+  arrange(age_at_registration)
+
+head(data_per_age_RG_duration, 20)
+
+# a dataframe with RG apart in differnet columns
+# Dcast removes the underscore in RG_case!! possible solution:
+names(data_per_age_RG_duration)[names(data_per_age_RG_duration) 
+                                == 'RG'] <- 'RG_case'
+# = removes the _case
+
+head(data_per_age_RG_duration)
+
+data_per_age_RG_duration.wide <- dcast(data_per_age_RG_duration, 
+                                  age_at_registration ~ RG_case,
+                                  value.var = 'fixed_odds_duration_median')
+head(data_per_age_RG_duration.wide)
+# the '_case' is back again????? whaaaat? how is that even possible???
+
+names(data_per_age_RG_duration.wide)[names(data_per_age_RG_duration.wide) ==
+                                       'RG case'] <- 'RG_case'
+# try again... from the result
+head(data_per_age_RG_duration.wide)
+# This worked... pfffff
+
+## 0.4.2 RG_case --> 1
+
+# DIFFERENT NEW PROBLEM: CONVERTING 0 TO RG_case:
+# names(data_per_age_RG_duration.wide)[names(data_per_age_RG_duration.wide) ==
+# '1'] <- 'RG_case'
+# names(data_per_age_RG_duration.wide)[names(data_per_age_RG_duration.wide) ==
+# '0'] <- 'control'
+?substr
+
+## 0.4.3 Dates
+
+# OK I use .dat now, that seems to work, but rest is all set for the .sav file,
+# so I choose to import
+
+# FIRST, convert to year
+gam$First_Deposit_Year <- as.numeric(str_sub(gambl$First_Deposit_Date,
+                                             -4, -1))
+gam$Registration_Date_Year <- as.numeric(str_sub(gambl$Registration_date,
+                                                 -4, -1))
+
+summary(gam$First_Deposit_Year)
+summary(gam$Registration_Date_Year)
+
+# Then date, does not work, maybe missings? --> nope in the .dat file it has a
+# lowercase
+gam$Registration_date <- as.Date(gambl$Registration_date, format = "%m/%d/%Y")
+gam$First_Deposit_Date <- as.Date(gambl$First_Deposit_Date, format = "%m/%d/%Y")
+
+## 0.4.4 Square the data
+
+# https://classroom.udacity.com/nanodegrees/nd002/parts/0021345407/modules/316518875375460/lessons/755618712/concepts/8140986360923
+
+summary(gam$sum_bets_casino)
+
+# +1 is not necessary here due to the exclusion of people that did not make a
+# bet in their first month
+summary(log10(gam$sum_bets_casino))
+summary(sqrt(gam$sum_bets_casino))
+
+# checking the square root variable --> exactly right:
+summary(gam$sum_bets_casino_sqrt)
+summary(gam$sum_bets_casino)
+#--> exactly right:
+
+# +1 is not necessary here due to the exclusion of people that did not make a
+# bet in their first month
+summary(log10(gam$sum_bets_casino))
+summary(sqrt(gam$sum_bets_casino))
+
+```
+
+```{r echo=FALSE, warning=FALSE, results = "hide", "0.5 Making subsets"}
+
+summary(gam$RG_case)
+Controlset <- subset(gam, RG_case == 'control')
+RGset <- subset(gam, RG_case != 'control')
+head(RGset, 20)
+
+# a dataframe with RG and gender apart
+group_per_RG_gender <- group_by(gam, Gender, RG_case)
+data_per_RG_gender <- summarise(group_per_RG_gender, 
+                                fixed_odds_bets_mean = mean(sum_bets_fixedodds,
+                                                            na.rm = TRUE),
+                            fixed_odds_bets_median = median(sum_bets_fixedodds,
+                                                                na.rm = TRUE),
+                                n = n())
+head(data_per_RG_gender)
+
+# rows without na
+gamble[is.na(gamble)] <- 0
+
+```
+
+```{r echo=FALSE, warning=FALSE, results = "hide", "0.6 New variables"}
+
+#### 0.6.1 make sum variable to compare with the fixed odds games
+# First the old fashioned way:
+
+# gives problem
+# gam$all_activedayswrong <- gam$bettingdays_fixedodds +
+# gam$bettingdays_liveaction + gam$bettingdays_casino
+# summary(gam$all_activedayswrong)
+
+# solution:
+gam$all_activedays <- gamble$bettingdays_fixedodds +
+  gamble$bettingdays_liveaction + gamble$bettingdays_casino
+
+summary(gam$all_activedays)
+
+# However, this has the problem that we cannot add the days for people might
+# play different games on the same day, and this is not in our dataset. We can,
+# however, look at the max betting. Stakes = just all the stakes added (so that
+# is why it is always much higher than bets), and can therefore be added.
+
+# Transform way:
+gam <- transform(gamble, all_bets = sum_bets_fixedodds + sum_bets_liveaction +
+                   sum_bets_casino, all_stakes = sum_stakes_fixedodds +
+                   sum_stakes_liveaction + sum_stakes_casino)
+summary(gam$all_stakes)
+
+# summary(gam)
+
+# A dataframe that has a total column
+
+#### 0.6.2 Make bins
+# somehow, I have to make it numeric again...?
+gam$First_Deposit_Year <- as.numeric(str_sub(gambl$First_Deposit_Date, -4, -1))
+gam$Registration_Date_Year <- as.numeric(str_sub(gambl$Registration_date,
+                                                 -4, -1))
+
+summary(gam$First_Deposit_Year)
+summary(gam$Registration_Date_Year)
+
+# To use it here
+gam$First_Deposit_Year.bucket <- cut(gam$First_Deposit_Year, c(1999, 2001, 2003,
+                                                               2005, 2007,
+                                                               2009))
+summary(gam$First_Deposit_Year.bucket)
+gam$Registration_Date_Year.bucket <- cut(gam$Registration_Date_Year,
+                                         c(1998,2001, 2003, 2005, 2007, 2009))
+summary(gam$Registration_Date_Year.bucket)
+
+gam$Registration_Date_Year.largebucket <- cut(gam$Registration_Date_Year, 
+                                              c(1999, 2005, 2007, 2009))
+summary(gam$Registration_Date_Year.bucket)
+
+# then I must convert it back to dates
+gam$Registration_date <- as.Date(gambl$Registration_date, format = "%m/%d/%Y")
+gam$First_Deposit_Date <- as.Date(gambl$First_Deposit_Date, format = "%m/%d/%Y")
+
+#### 0.6.3 create a categorical variable:
+# summary(gam) <-- turned off for convienience
+bettingornot <- NA
+gam$bettingornot <- ifelse(1/gam$bettingdays_casino/gam$bettingdays_liveaction/
+                             gam$bettingdays_fixedodds == Inf, FALSE, TRUE)
+gam$bettingornot <- factor(gam$bettingornot)
+summary(gam$bettingornot)
+print(1/0)
+
+```
+
+# 1. EXPLORING THE DATA SET (univariate and some bivariate).
+
+## 1.1 First exploratory plots
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, "1.1 First exploratory plots"}
+### get the variables:
+names(gam)
+# so 97 original variables
+
+```
+
+So there are 97 original variables
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# type of variabeles:
+str(gam)
+# showed that have to fix the data variables (see 0.4.3 in markdown doc)
+
+```
+
+This showed that had to fix the data variables (also see 0.4.3 in markdown doc)
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# summary on the values:
+summary(gam)
+# a lot of differences between the means and medians... dealing with a pretty
+# extreme dataset it seems. Lots of missings in the casino gambling and the live
+# action betting gambling.
+
+```
+
+A lot of difference between many of the means and medians... dealing with a
+pretty extreme dataset it seems. Lots of missings in the casino gambling and the
+live action betting gambling. 167 rows have missings on demographic information.
+
+
+
+Understanding the data: are we dealing with data on multiple gambling actions
+over time or are ID's Unique (cross sectional data)?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# understanding the data: are we dealing with data on multiple gambling actions
+# over time or are ID's Unique (cross sectional data)?
+dim(gam)
+# There is only one row per gambler, this also comes forward in the variables.
+
+```
+
+There is only one row per gambler, this also comes forward in the variables.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'}
+# make a table of RG Case --> it is exactly the same, so that seems correct
+table(gam$RG_case)
+#it is exactly the same, so that seems correct
+
+```
+
+
+
+
+
+
+## 1.2 First exploratory plots: age and gender
+
+How is age distributed (univariate)?  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, "1.2 First exploratory plots"}
+# make a plot of birth date ---> a lot of young people, as expected (gamblers
+# are typically young males)
+qplot(x = YearofBirth, data = gam,
+      xlab = 'age',
+      ylab = 'Number of people in Sample',
+      color = I('black'), fill = I('purple')) +
+  scale_x_continuous() +
+  xlim(1920, 2000)
+
+# turn it into age
+# qplot(x = 2003-YearofBirth, data = gam,
+#   xlab = 'age',
+#   ylab = 'Number of people in Sample',
+#   color = I('black'), fill = I('purple'),
+#   binwidth = 1) +
+#   scale_x_continuous(limits = c(16, 100), breaks = seq(0, 100, 10))
+
+# as it turns out, there already is an age variable, and this is more precize
+# due to no privacy rounding. there seems to be no clear indications that people
+# are lying about their age (only a small peak at 50 whcih could be
+# coincidence):
+qplot(x = age_at_registration, data = gam,
+      xlab = 'age',
+      ylab = 'Number of people in Sample',
+      color = I('black'), fill = I('purple'),
+      binwidth = 1) +
+  scale_x_continuous(limits = c(16, 100), breaks = seq(0, 100, 10))
+
+```
+
+A lot of young people, as expected (gamblers are typically young males). There
+seems to be no clear indications that people are lying about their age (only a
+small peak at 50 which could be coincidence.
+
+How is age distributed over the time spend at the online fixed odds games
+(bivar)?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# how is age distributed over the time spend at the online fixed odds games?
+# we see that there is a very big tendency towards young people that do not
+# gamble so much
+ggplot(aes(x = age_at_registration, y = bettingdays_fixedodds), data = gam) + 
+  geom_point(alpha = 1/6, color = 'red', position = position_jitter(h = 0)) +
+  xlim(16, 80) + ylim(0, 2000) +
+  coord_trans(y = 'sqrt') +
+  geom_line(stat = 'summary', fun.y = mean)
+
+```
+
+We see that a lot of data is about relatively young people that do
+not gamble so much
+
+Make a plot of gender  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# make a plot of gender ---> much more males, as expected (gamblers are
+# typically young males)
+qplot(x = Gender, data = gambl)
+
+# using ggplot
+ggplot(aes(x = YearofBirth), data = gambl) +
+  geom_histogram(binwidth = 1) +
+  scale_x_continuous()
+
+```
+
+As expected, (gamblers are typically young males)
+
+When the age variable is split by gender it becomes clear that they are simular
+in pattern:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# first, set birth date off against gender:
+ggplot(aes(x = YearofBirth), data = gam) +
+  geom_histogram(binwidth = 10) + xlim(1940, 2000) +
+  facet_wrap(~Gender, ncol = 2)
+
+```
+
+the gambling pattern over age also holds for both genders:  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = age_at_registration, y = bettingdays_fixedodds), data = gam) + 
+  geom_point(alpha = 1/3, position = position_jitter(h = 0)) +
+  xlim(16, 80) + ylim(0, 2000)+ coord_trans(y = 'sqrt') +
+  facet_wrap(~Gender, ncol = 2)
+
+```
+
+Making our own variable to compare age in more detail:  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+age_groups <- group_by(gam, age_at_registration)
+gam.FIXED_ODDS_time_spend_by_age <- summarise(age_groups, 
+    Time_on_fixedodds_mean = mean(bettingdays_fixedodds, na.rm = TRUE),
+    Time_on_fixedodds_median = median(bettingdays_fixedodds, na.rm = TRUE),
+    n = n())
+gam.FIXED_ODDS_time_spend_by_age <- arrange(gam.FIXED_ODDS_time_spend_by_age, age_at_registration)
+
+head(gam.FIXED_ODDS_time_spend_by_age, 20)
+
+# On average though, the distribution seems pretty even over age. 
+ggplot(aes(x = age_at_registration,
+           y = Time_on_fixedodds_mean), 
+       data = gam.FIXED_ODDS_time_spend_by_age) + 
+  geom_line() +
+  xlim(16, 80) + ylim(0, 2000)+ coord_trans(y = 'sqrt')
+
+```
+
+On average, the distribution concerning gambling time seems pretty even over
+age (and gender). We will compare the RG groups in the next section  
+  
+
+For the country of residence, let's change the theme and plot country:
+
+```{r}
+theme_set(theme_minimal(5))
+
+opts_chunk$set(comment=NA, fig.width=10, fig.height=8)
+
+qplot(x = CountryName, data = gam) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5))
+
+table(gam$CountryName)
+```
+
+A lot of Germans. But German.com seems a bit suspicious. Check with the language
+preference:
+
+```{r}
+theme_set(theme_minimal(5))
+
+opts_chunk$set(comment=NA, fig.width=10, fig.height=8)
+
+qplot(x = LanguageName, data = gam) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10))
+
+```
+
+There are a lot of German speaking gamblers in this dataset!
+
+
+
+
+
+## 1.3 RG (are the controls evenly distributed?)
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# set RG case off against gender to see if evenly chosen:
+qplot(x = RG_case, data = gambl, binwidth = 1, color = I('black'), fill = I('purple')) +
+  facet_wrap(~Gender, ncol = 2)
+
+```
+
+set birth date and gender off against control group to see if evenly chosen:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# set birth date and gender off against control group to see if evenly chosen
+# --> they are:
+qplot(x = YearofBirth, data = gambl, color = I('black'), fill = I('purple')) +
+  facet_grid(RG_case~Gender)
+
+```
+
+they are almost exactly even. So also clear that they used this as an indicator
+for selection.
+
+Plotting the registration and deposit dates
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# clear that they used deposit date as an indicator for selection:
+qplot(x = Registration_date, data = gam) +
+  facet_grid(RG_case~Gender)
+
+qplot(x = First_Deposit_Date, data = gam) +
+  facet_grid(RG_case~Gender)
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# nicer plot --> almost even, though it seems that the RG group has very young
+# registration dates. This is interesting.
+qplot(x = age_at_registration, data = gam,
+      xlab = 'age',
+      ylab = 'Number of people in Sample',
+      color = I('black'), fill = I('purple'),
+      binwidth = 1) +
+  scale_x_continuous(limits = c(16, 100), breaks = seq(0, 100, 10)) +
+  facet_grid(RG_case~Gender)
+```
+
+They are almost equal, though it seems that the RG group has very young
+registration dates. This is interesting.
+
+Is this also a significant difference? We learned in lesson 2:  
+We don't know the population thing, so t-test.  
+Different people, so independent t-test (no carry over, but also possibility of
+other influences):
+Non-directional; they could score less in this due to their problems, so two
+tailed:
+
+```{r}
+t.test(Controlset$age_at_registration, RGset$age_at_registration)
+
+```
+
+Very much the same group! Probability of obtaining an effect at least as extreme
+as the one in your sample data, assuming the truth of the null hypothesis, is
+96% (this is a good thing).
+
+
+```{r}
+theme_set(theme_minimal(5)) 
+qplot(x = LanguageName, data = gam, fill = LanguageName)+
+  facet_grid(RG_case~Gender) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10))
+
+```
+
+Distributed very equally over sex and RG_case.  
+
+## 1.4 Check the distribution of the gambling data  
+
+We make a few historgrams to check for distribution. If highly skewed, we put it
+on a logscale to see the difference:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Plotting time spend (active days):
+ggplot(aes(x= bettingdays_fixedodds), data = gam) +
+  geom_histogram(binwidth = 100)
+ggplot(aes(x= bettingdays_fixedodds), data = gam) +
+  geom_histogram(binwidth = 0.01) +
+  scale_x_log10()
+# less, but still very scewed.
+```
+
+Less, but still very scewed.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# check for sum bets
+ggplot(aes(x= sum_bets_fixedodds), data = gam) +
+  geom_histogram()
+# also extremely skewed...
+ggplot(aes(x= sum_bets_fixedodds), data = gam) +
+  geom_histogram(binwidth = 0.01) +
+  scale_x_log10()
+# this one is a little nicer.
+```
+
+This one is much nicer on a log scale  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# check for sum stakes
+ggplot(aes(x= sum_stakes_fixedodds), data = gam) +
+  geom_histogram()
+# also extremely skewed...
+ggplot(aes(x= sum_stakes_fixedodds), data = gam) +
+  geom_histogram(binwidth = 0.01) +
+  scale_x_log10()
+```
+
+This one is much nicer on a log scale  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# frequency
+ggplot(aes(x= frequency_fixedodds), data = gam) +
+  geom_histogram()
+# also extremely skewed... with a very strange twist in that a lot of people
+# seem to gamble 100%
+ggplot(aes(x= sum_stakes_fixedodds), data = gam) +
+  geom_histogram(binwidth = 0.01) +
+  scale_x_log10()
+# but this one is way nicer.
+```
+
+This one is much nicer on a log scale  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# bets per day
+ggplot(aes(x= bets_per_day_fixedodds), data = gam) +
+  geom_histogram()
+# also extremely skewed... 
+ggplot(aes(x= bets_per_day_fixedodds), data = gam) +
+  geom_histogram(binwidth = 0.01) +
+  scale_x_log10()
+# this does not seems handy, starting point should be below 1
+```
+This does not seems handy, starting point should be below 1  
+
+Using a log scale, we can transform many variables to a seemingly normal
+distribution. Only for bets per day this does not seems handy, starting point
+should be below 1.
+
+How many people gamle on all three games?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# see 0.6 for process of creating
+summary(gam$bettingornot)
+
+```
+
+1300 people
+
+## **Conclusion**: 
+### What is the structure of your dataset?  
+We are dealing with cross sectional data, the ID's are unique. The gambling data
+are very skewed, which is normal for financial data, but also the variables that
+indicate how much time is spend on gambling is very skewed due to the large
+group that is only active for one day compared to people who are active many,
+many days.
+
+### What is/are the main feature(s) of interest in your dataset?  
+By far the most data is about Fixed Odds betting, which is what we are
+interested in. It will however be interested to compare this with other gambling
+types to see how they compare on certain topics.
+
+### What other features in the dataset do you think will help support your \
+investigation into your feature(s) of interest?  
+
+The fact that the RG cases are evenly distributed over the different periods of
+time makes comparisments more easy. The age variable is a nice variable to set
+off against the amount of gambling, although for our analysis, we will be
+primarily interested in the fact is gamblers are flagged as an RG-Case.
+
+### Did you create any new variables from existing variables in the dataset?  
+Yes see section 0.6 (create variables) in the Rmd file for a collection of
+different variables that were created.
+
+### Of the features you investigated, were there any unusual distributions? 
+Did you perform any operations on the data to tidy, adjust, or change the form
+of the data? If so, why did you do this?
+
+Yes (a lot), see section 0.4 (Data Wrangling) of the Rmd file for these plus the
+reasons.
+
+   
+  
+   
+  
+  
+  
+# 2. HOW DO FIXED ODDS GAMBLERS IN THE RESPONSIBLE GAMBLING GROUP DIFFER FROM
+THE CONTROL GROUP? (mostly bivariate and multivariate plots)
+
+## 2.1 first exploration
+
+All fixed odds + handy created variables. countryname & languagename were not
+allowed (too many variables), and done twice to keep overview. RG and Reg. date
+in both sets. Most interested in how RG cases compare, so it is handy to keep
+those on the first line.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+theme_set(theme_minimal(20))
+set.seed(1836)
+names(gam)
+gam_subset <- gam[,c("RG_case",
+                     "Missing_Daily_Transactions",
+                     "First_Deposit_Date",
+                     "Registration_date",
+                     "Gender",
+                     "age_at_registration",
+                     "sum_stakes_fixedodds", 
+                     "bettingdays_fixedodds",
+                     "duration_fixedodds")]
+# summary(gam_subset)
+# ggpairs(gam_subset[sample.int(nrow(gam_subset), 1000),]) +
+#   theme(
+#     axis.text = element_text(size = 3),
+#     axis.title = element_text(size = 2),
+#     legend.background = element_rect(fill = "white"),
+#     panel.grid.major = element_line(colour = NA),
+#     panel.grid.minor = element_blank(),
+#     panel.background = element_rect(fill = "grey95"))
+
+gam_subset2 <- gam[,c("RG_case", 
+                      "age_at_registration",
+                      "frequency_fixedodds",
+                      "bets_per_day_fixedodds",
+                      "euros_per_bet_fixedodds",
+                      "net_loss_fixedodds",
+                      "percent_lost_fixedodds",
+                      "all_bets",
+                      "all_stakes",
+                      "Registration_Date_Year.bucket",
+                      "Registration_Date_Year.largebucket")]
+# ggpairs(gam_subset[sample.int(nrow(gam_subset), 1000),]) +
+#   theme(
+#     axis.text = element_text(size = 3),
+#     axis.title = element_text(size = 2),
+#     legend.background = element_rect(fill = "white"),
+#     panel.grid.major = element_line(colour = NA),
+#     panel.grid.minor = element_blank(),
+#     panel.background = element_rect(fill = "grey95"))
+
+# only numerical:
+
+gam_subset3 <- gam[,c("age_at_registration",
+                      "frequency_fixedodds",
+                      "bets_per_day_fixedodds",
+                      "euros_per_bet_fixedodds",
+                      "net_loss_fixedodds",
+                      "percent_lost_fixedodds",
+                      "all_bets",
+                      "all_stakes",
+                      "Registration_Date_Year.bucket",
+                      "Registration_Date_Year.largebucket",
+                      "Missing_Daily_Transactions",
+                      "First_Deposit_Date",
+                      "Registration_date",
+                      "sum_stakes_fixedodds", 
+                      "bettingdays_fixedodds",
+                      "duration_fixedodds")]
+
+
+## Multiple t-tests for time, age, frail between genders.
+# lapply(gam[,c("bettingdays_fixedodds", "sum_stakes_fixedodds", "bets_per_day_fixedodds")], function(x) t.test(x ~ gam$RG_case))
+
+ggcorr(gam_subset3[sample.int(nrow(gam_subset3), 1000),])
+
+```
+
+We can already view some very large differences between the two RG groups,
+because the boxplots are very different, even at this scale that is easy to see.
+Also, there are some obvious correlations between registration date and time
+spend at the website, and the amount of money spend (more time = more
+opportunity to spend a lot of money). The same holds for the amount that is bet
+it total and the amount per bet: these constructs are interdependent. Therefore,
+it is not so wierd that there are a lot of pretty high correlations there. We
+will focus mainly on RG vs Control group.
+  
+  
+## 2.2 time spend
+Who spend more time at fixed odds games, RG or control group?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+by(gam$bettingdays_fixedodds, gam$RG_case, summary)
+
+qplot(x = bettingdays_fixedodds, data = gam, binwidth = 100,
+      color = I('black'), fill = I('blue'), 
+      xlim = c(0, 2000), ylim = c(0,100)) +
+  facet_wrap(~RG_case, ncol = 2)
+
+```
+
+That is a huge difference! The median of the RG group is more than four times as
+big as the median of the control group. And we can see that there are far more
+'marathon users' in the RG case group.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# these both conclusions are reflected in the boxplots:
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = bettingdays_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 2000))
+
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = bettingdays_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 200))
+```
+
+These both conclusions are reflected in the boxplots above.
+
+But is this also a significant difference? We learned in lesson 2:  
+We don't know the population thing, so t-test.  
+Different people, so independent t-test (no carry over, but also possibility of
+other influences):
+Non-directional; they could score less in this due to their problems, so two
+tailed.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tbettingdays = t.test(RGset$bettingdays_fixedodds, Controlset$bettingdays_fixedodds)
+
+print(tbettingdays$statistic)
+# help(summary.lm)
+rsquare = tbettingdays$statistic^2/(tbettingdays$statistic^2+tbettingdays$parameter)
+print(rsquare)
+# incorrect, only paired:
+# cor.test(RGset$bettingdays_fixedodds, Controlset$bettingdays_fixedodds, method
+# = 'pearson')
+```
+
+The result is statistically significant (even at a .0001 level).
+t(2765) = 17.37, p < .001. The r of this variable remains small though: r2 = 0.098.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+qplot(x = bettingdays_fixedodds, data = subset(gam, !is.na(RG_case)), binwidth = 10,
+      xlab = 'active days on fixed odds games',
+      ylab = 'Number of people in Sample',
+      color = I('black'), fill = I('darkgreen')) +
+  scale_x_continuous(limits = c(50, 500), breaks = seq(0, 500, 50)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 200, 100)) +
+  facet_wrap(~RG_case, ncol = 1)
+
+```
+
+This effect can also be seen when comparing the tails of the histograms: much
+more people gamble longer in the RG case
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+qplot(x = bettingdays_fixedodds, data = subset(gam, !is.na(RG_case)), binwidth = 100,
+      ylab = 'Number of people in Sample',
+      geom = 'freqpoly', y = ..count../sum(..count..), color = RG_case) +
+  scale_x_continuous(breaks = seq(0, 2000, 200), limits = c(0, 2000)) +
+  coord_cartesian(ylim = c(0, 0.1)) +
+  theme(legend.position="top", 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 10))
+
+```
+
+This can be plotted in polygon. There interesting peak at 1400 days for the
+RG's  
+ 
+Using an extra dataset we can analyse how the medians and means of the different
+RG and Genders compare over age:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot (aes(x=round(age_at_registration/5)*5, y = fixed_odds_duration_median),
+  data = data_per_age_RG_duration) +
+  coord_cartesian(xlim = c(18,50)) +
+  geom_line(aes(color = RG_case), stat = 'summary', fun.y = median)+
+  geom_line(stat = 'summary', fun.y = median, linetype = 2)
+
+ggplot (aes(x=round(age_at_registration/5)*5, y = fixed_odds_duration_mean), 
+  data = data_per_age_RG_duration) +
+  coord_cartesian(xlim = c(18,50)) +
+  geom_line(aes(color = RG_case), stat = 'summary', fun.y = mean)+
+  geom_line(stat = 'summary', fun.y = mean, linetype = 2)
+
+# hmmmm we don't seem to need the extra dataset though... :
+# ggplot (aes(x=round(age_at_registration/5)*5, y = bettingdays_fixedodds), 
+#         data = gam) +
+#   geom_line(aes(color = RG_case), stat = 'summary', fun.y = mean)+
+#   geom_line(stat = 'summary', fun.y = mean, linetype = 2)
+
+```
+
+As expected, there seems not to be a big impact on age in either RG or control
+case. The difference remains still very big in every age category.
+
+Plot the ratio:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# somehow... RG_case still secretly keeps turning into 'RG case'
+names(data_per_age_RG_duration.wide)[names(data_per_age_RG_duration.wide) == 'RG case'] <- 'RG_case'
+# try again... from the result
+head(data_per_age_RG_duration.wide)
+# This worked... pfffff
+
+
+ggplot(aes(x=age_at_registration, y = RG_case/control), 
+  data = data_per_age_RG_duration.wide) +
+  ylab('median RG/control') +
+  coord_cartesian(ylim = c(0, 10), xlim = c(18,45)) +
+  geom_smooth() +
+  geom_hline(yintercept = 1, alpha = 0.3, linetype = 2)
+
+head(data_per_age_RG_duration.wide)
+
+```
+
+It becomes clear that the difference between the two gambling types seems to
+grow smaller, but after the end of the 20's there seems to be an increase.This
+difference seems to be growing while RG are older. Since we are dealing with a
+lot of males, this could possibly be less influence of surroundings, 30's
+influence again (childern/partner) then in 40's a rise? We will see if this same
+dip is also present in the betting intensity later in this analysis.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = age_at_registration, y = bettingdays_fixedodds), data = gam) + 
+  coord_cartesian(ylim = c(0, 500), xlim = c(18,60)) +
+  geom_point(alpha = 1/2, 
+             position = position_jitter(h = 0),
+             color = 'darkblue') +
+  facet_wrap(~RG_case, ncol = 2) +
+  geom_line(stat = 'summary', fun.y = mean, size = 1, linetype = 1, color = 'black') +
+  geom_line(stat = 'summary', fun.y = median, size = 1.3, linetype = 1, color = 'gray') +
+  geom_smooth()
+```
+
+
+With a y sqrt value and smoothed conditional means, without smoother
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = age_at_registration, y = bettingdays_fixedodds), data = gam) + 
+  labs(title = 'Plot 1: Active days per age category', x = 'age (per two years)', y = 'Total days played Fixed odds Squared') +
+  theme(axis.title.x = element_text(size = 12), axis.title.y = element_text(size = 12), plot.title = element_text(size = 19)) +
+  xlim(18, 50) +
+  ylim(0, 2000)+
+  coord_trans(y = 'sqrt') +
+  geom_point(alpha = 1/5, 
+             position = position_jitter(h = 0),
+             color = 'darkgrey') +
+  facet_wrap(~RG_case, ncol = 2) +
+  geom_line(stat = 'summary', fun.y = mean, size = 0.5, linetype = 1, aes(color = "Mean per age"))+
+  geom_line(stat = 'summary', fun.y = median, size = 0.5, linetype = 1, aes(color = "Median per age") )+
+  scale_color_manual(name = "", values = c("Mean per age" = "blue","Median per age" = "red"))
+
+```
+
+Make it in one plot:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = age_at_registration, y = bettingdays_fixedodds, colour = RG_case, xlab = 'age (per two years)', ylab = 'Total days playing Fixed odds Squared'), data = gam) + 
+  xlim(18, 50) +
+  ylim(0, 2000)+
+  coord_trans(y = 'sqrt') +
+  geom_point(alpha = 1/8, position = position_jitter(h = 0)) +
+  geom_line(data = Controlset, stat = 'summary', fun.y = mean, size = 0.5, linetype = 1, color = "blue")+
+  geom_line(data = Controlset, stat = 'summary', fun.y = median, size = 1, linetype = 2, color = "blue")  +
+  geom_line(data = RGset, stat = 'summary', fun.y = mean, size = 0.5, linetype = 1, color = "red")+
+  geom_line(data = RGset, stat = 'summary', fun.y = median, size = 1, linetype = 2, color = "red")
+
+# I like the one above better
+```
+
+A little too much. I like the one above better.  
+When plotting in these scatterplots it becomes clear that the RG cases spend
+much more time gambling in every age group, there are relatively very little
+people who do not spend time in RG, as expected.
+
+**Conclusion: **A significant difference between RG cases concerning their
+active betting days; RG cases gamble more often than the control group when only
+looking at this variable. This differnce seems to increase with age.
+
+
+
+
+
+
+
+
+## 2.3 Total euro's in bets made
+
+Who placed more bets at fixed odds games, RG or control group?
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+by(gam$sum_bets_fixedodds, gam$RG_case, summary)
+
+qplot(x = sum_bets_fixedodds, data = gam, binwidth = 100,
+  color = I('black'), fill = I('blue'), 
+  xlim = c(0, 138866), ylim = c(0,100)) +
+  facet_wrap(~RG_case, ncol = 2)
+
+qplot(x = sum_bets_fixedodds, data = gam,
+  color = I('black'), fill = I('blue')) +
+  scale_x_log10()+
+  facet_wrap(~RG_case, ncol = 2)
+
+```
+
+Again a big difference between the two groups. The median of the RG group is
+more than five times as big as the median of the control group and there are far
+more 'big spenders' in the RG case group. This shows best on a log scale.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# these both conclusions are reflected in the boxplots:
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = sum_bets_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 138866))
+
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = sum_bets_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 600))
+
+```
+These conclusions are reflected in the boxplots above.  
+
+But is this also a significant difference? We learned in lesson 2:  
+We don't know the population thing, so t-test.  
+Different people, so independent t-test (no carry over, but also possibility of
+other influences):
+Non-directional; they could score less in this due to their problems, so two
+tailed.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+t.test(RGset$sum_stakes_fixedodds, Controlset$sum_stakes_fixedodds)
+
+tbet = t.test(RGset$sum_bets_fixedodds, Controlset$sum_bets_fixedodds)
+
+print(tbet$statistic)
+# help(summary.lm)
+rsquare = tbet$statistic^2/(tbet$statistic^2+tbet$parameter)
+print(rsquare)
+
+# wrong:
+# cor.test(RGset$sum_bets_fixedodds, Controlset$sum_bets_fixedodds, method = 'pearson')
+
+```
+The result is statistically significant (even at a .0001 level).
+t(2166) = 8.128, p < .001. The effect size is pretty small though: r2 = 0.03
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+qplot(x = round(sum_bets_fixedodds/20)*20, data = subset(gam, !is.na(RG_case)), binwidth = 10,
+      color = I('black'), fill = I('darkgreen')) +
+  scale_x_continuous(limits = c(500, 5000), breaks = seq(0, 5000, 500)) +
+  scale_y_continuous(limits = c(0, 20), breaks = seq(0, 100, 10)) +
+  facet_wrap(~RG_case, ncol = 1)
+```
+The reason for this difference can be found when comparing the tails of the
+histograms: much more people bet more money in the RG case
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+qplot(x = sum_bets_fixedodds, data = subset(gam, !is.na(RG_case)), binwidth = 100,
+      ylab = 'Perc of people in sample',
+      geom = 'freqpoly', y = ..count../sum(..count..), color = RG_case) +
+  scale_x_continuous(breaks = seq(0, 2000, 400), limits = c(0, 2000)) +
+  coord_cartesian(ylim = c(0, .4))
+
+```
+This can be plotted in polygon which looks at the relative number of people in
+the sample; the difference remains the same over all expenses. There interesting
+peak at 1200 euro for the RG's
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot (aes(x=round(age_at_registration/5)*5, y = sum_bets_fixedodds),
+        data = gam) +
+    coord_cartesian(xlim = c(18, 50), ylim = c(0, 3000)) +
+  geom_line(aes(color = RG_case), stat = 'summary', fun.y = mean)+
+  geom_line(stat = 'summary', fun.y = mean, linetype = 2)
+
+ggplot (aes(x=round(age_at_registration/5)*5, y = sum_bets_fixedodds),
+        data = gam) +
+    coord_cartesian(xlim = c(18,50), ylim = c(0, 500)) +
+  geom_line(aes(color = RG_case), stat = 'summary', fun.y = median)+
+  geom_line(stat = 'summary', fun.y = median, linetype = 2)
+
+```
+The difference remains very big in every age category. It becomes clear that the
+difference between the two gambling types seems to grow bigger, but after the
+end of the 40's there seems to be an decrease. We don't see the exact same dip
+as with total betting days.
+
+Although obvious when looking at the minimum (one cannot spend less than a euro
+a day), to understand relation between total bets and total days spend we plot
+in a scatterplot both variables.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y = bettingdays_fixedodds,
+           x = sum_bets_fixedodds,
+           colour = RG_case),
+       data = gam) +
+  geom_point(alpha = 1/2, size = 1, position = 'jitter') +  
+  scale_x_log10() +
+  scale_y_log10(limits = c(1, 2000))
+```
+Ignoring the obvious linear relation formed by the minimum bet per day, we can
+see that big spenders often also spend a lot of time, as expected. This means we
+are not dealing with people who bet a large sum in one time, which also would be
+strange when considering the gambling type: sports betting with fixed odds. We
+also see a clear dominance by RG gamblers in both higher segments.
+
+
+**Conclusion: **A significant difference between RG cases concerning their total
+bets; RG cases bet more money than the control group when only looking at this
+variable. This differnce seems to increase with age.
+
+
+
+
+
+
+## 2.4 Stakes, loss and the total bets played
+
+The other three variables will be plotted in a simular fasion.  
+
+### stakes
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#  - do they play at higher stakes (sum_stakes)?
+by(gam$sum_stakes_fixedodds, gam$RG_case, summary)
+
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = sum_stakes_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 138866))
+
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = sum_stakes_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 6000))
+
+qplot(x = sum_stakes_fixedodds, data = gam,
+  color = I('black'), fill = I('blue')) +
+  scale_x_log10()+
+  facet_wrap(~RG_case, ncol = 2)
+
+```
+
+Again a big difference between the two groups, the biggest yet. The median of
+the RG group is 14 times as big as the median of the control group and there are
+far more 'big spenders' in the RG case group. This shows best on a log scale.
+
+But is this also a significant difference?:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+t.test(RGset$sum_stakes_fixedodds, Controlset$sum_stakes_fixedodds)
+
+tstake = t.test(RGset$sum_stakes_fixedodds, Controlset$sum_stakes_fixedodds)
+
+print(tstake$statistic)
+# help(summary.lm)
+rsquare = tstake$statistic^2/(tstake$statistic^2+tstake$parameter)
+print(rsquare)
+```
+
+t(2353) = 11.743, p < .001. r2: 0.055  
+
+
+
+### Net loss
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+by(gam$net_loss_fixedodds, gam$RG_case, summary)
+
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = net_loss_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(-34000, 64346))
+
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = net_loss_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 1000))
+
+qplot(x = net_loss_fixedodds, data = gam,
+  color = I('black'), fill = I('blue')) +
+  scale_x_log10()+
+  facet_wrap(~RG_case, ncol = 2) +
+  coord_cartesian(xlim = c(1, 100000, 1000))
+
+```
+
+Interestingly, there seems also to be some people that profited a lot from
+gambling (33000 euro profit). But looking at the plots, it becomes clear that we
+are dealing with two very big outliers in the RG case group. The median of the
+RG group is almost eight times as big as the median of the control group and
+there are far more 'big losers' in the RG case group. This shows best on a log
+scale. Also, there are a lot more missings than on the other variables.
+
+But is this also a significant difference?:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tnet = t.test(RGset$net_loss_fixedodds, Controlset$net_loss_fixedodds)
+
+print(tnet$statistic)
+# help(summary.lm)
+rsquare = tnet$statistic^2/(tnet$statistic^2+tnet$parameter)
+print(rsquare)
+# incorrect, only paired:
+# cor.test(RGset$net_loss_fixedodds, Controlset$net_loss_fixedodds,
+# method = 'pearson')
+
+```
+
+t(1722) = 11.538, p < .001. r: 0.098  
+
+### Total number of bets
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+by(gam$bets_per_day_fixedodds * gam$bettingdays_fixedodds, gam$RG_case, summary)
+
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = gam$bets_per_day_fixedodds * gam$bettingdays_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 138866))
+
+qplot(data = subset(gam, !is.na(RG_case)),
+      x = RG_case,
+      y = gam$bets_per_day_fixedodds * gam$bettingdays_fixedodds,
+      geom = 'boxplot') +
+  stat_summary(fun.y = mean, geom = 'point', 
+  color = 'blue', size = 3, shape = 4) +
+  coord_cartesian(ylim = c(0, 600))
+
+qplot(x = bets_per_day_fixedodds * bettingdays_fixedodds, data = gam,
+  color = I('black'), fill = I('blue')) +
+  xlab("Total bets made") +
+  scale_x_log10()+
+  facet_wrap(~RG_case, ncol = 2) +
+  coord_cartesian(xlim = c(1, 10000, 1000))
+
+```
+
+The median of the RG group is more than seven times as big as the median of the
+control group and there are far more 'marathon betters' in the RG case group,
+and far less that make less than 100 bets. This shows best on a log scale.
+
+But is this also a significant difference?:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tbets = t.test(RGset$net_loss_fixedodds, Controlset$net_loss_fixedodds)
+
+print(tbets$statistic)
+# help(summary.lm)
+rsquare = tbets$statistic^2/(tbets$statistic^2+tbets$parameter)
+print(rsquare)
+# incorrect
+# cor.test(RGset$net_loss_fixedodds, Controlset$net_loss_fixedodds,
+#  method = 'pearson')
+```
+
+t(2219) = 11.538, p < .001. r2: 0.0566  
+
+
+
+**Conclusion: **
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?  
+
+A significant difference on all five investigated variables between RG cases and
+the control group, which is a clear sign that we are dealing with a very
+different group concerning gambling behaviour, with medians often 10 times as
+big as the control group. The plots show that these differences remain constant
+over age, and that on top of that, the RG group has a lot of ouliers that make
+the comparisment more extreme.
+
+A surprise were the outliers that did not make loss, but huge profit. It should
+be noted though that there were a lot of missings in this variable.
+
+### Did you observe any interesting relationships between the other features \
+(not the main feature(s) of interest)?  
+
+Yes, there are many correlations between the different variables, such as
+frequency and active days. But we have to watch out with this dataset that many
+variables are in fact constructs of one another.
+
+### What was the strongest relationship you found?  
+I have two of equal strength:  
+
+Active days: t(2765) = 17.37, p < .001. r2 = 0.098  
+Net loss: t(1722) = 11.538, p < .001. r2 = 0.098  
+
+Because of the larger N I would prefer active days.  
+
+
+# 3. More complex relations with being a Responisble gambler (bi- and
+multivariate)
+
+## 3.1 The impact of the Registration day on fixed-odds gambling ( Frequency &
+Bets per day) in the RG group vs the control group
+
+First we will investigate how registration date impacts (y=) frequency (= total
+days from first bet active bettingdays), when plotted over (x=) age
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# see how registration date impacts frequency (= total days from first bet /
+# active bettingdays ) --> 
+ggplot(aes(x=age_at_registration, y = frequency_fixedodds),
+  data = subset(gam, !is.na(Registration_Date_Year.largebucket)))+
+  geom_smooth(aes(color = Registration_Date_Year.largebucket))+
+  coord_cartesian(ylim = c(0.1, 0.4), xlim = c(18,45)) +
+        theme(legend.position="top", 
+        legend.text = element_text(size = 5), 
+        legend.title = element_text(size = 5))
+
+```
+
+The age variable is pretty evenly distributed: higher age means more frequent
+visits (though we should remember that the youth is overrepresented). Frequency
+rises strongly when the gambling duration is smaller (as expected); the shorter
+time, the less likely one is bored.
+
+See how registration date impacts bets per day (total bets/ active bettingdays)
+over age
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x=age_at_registration, y = bets_per_day_fixedodds, 
+           binwidth = 10),
+      data = subset(gam, !is.na(Registration_Date_Year.bucket))) +
+      coord_cartesian(ylim = c(0, 25), xlim = c(18,45)) +
+      geom_line(stat = 'summary', fun.y = median, linetype = 2) +
+      geom_smooth(aes(mapping = NULL, se = FALSE, 
+                      color = Registration_Date_Year.bucket)) +
+      theme(legend.position="top", 
+            legend.text = element_text(size = 5), 
+            legend.title = element_text(size = 5))
+```
+
+Use smoother to make the lines more smooth, we can see that they are pretty
+even. The lines that represent the early birds are more prone to fluctuation, so
+we should not make to much assumptions based on that; we can see by the plotted
+grand median and the summary data that most data is about the more recently
+joined gamblers, and that their combined datasets make a median that is lower
+than each individual median. It is interesting that all three 'large' age groups
+have the same flow concerning bets per day: a steady growth towards the age
+around 35, followed by a downfall. So no big effect on bets per day it seems.
+This becomes even clearer when we make the buckets larger:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x=age_at_registration, y = bets_per_day_fixedodds, 
+           binwidth = 10),
+      data = subset(gam, !is.na(Registration_Date_Year.largebucket))) +
+      coord_cartesian(ylim = c(0, 15), xlim = c(18,45)) +
+      geom_line(stat = 'summary', fun.y = median, linetype = 2) +
+      geom_smooth(aes(mapping = NULL, se = FALSE, 
+                      color = Registration_Date_Year.largebucket)) +
+      theme(legend.position="top", 
+            legend.text = element_text(size = 5), 
+            legend.title = element_text(size = 5))
+```
+
+But now let us look at the behaviour of these lines when we split them over RG
+versus non RG (control).
+
+First, we can use the duration, the time from the first to the last bet in days,
+to see the effect of tenure more clearly in terms of correlations:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+with(subset(gam, !is.na(duration_fixedodds)),
+     cor.test(duration_fixedodds,
+              frequency_fixedodds))
+
+# head(subset(gam, !is.na(duration_fixedodds)))
+```
+
+-0.333 can be considered as a pretty high correlation, and is significant at p <
+0.01: so there seems to be an impact on the percentage of subscribed days on
+which a gambler was active, but not so much on the number of bets made on those
+days.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+with(subset(RGset, !is.na(duration_fixedodds)),
+     cor.test(duration_fixedodds, frequency_fixedodds))
+
+with(subset(Controlset, !is.na(duration_fixedodds)),
+     cor.test(duration_fixedodds, frequency_fixedodds))
+
+# head(subset(gam, !is.na(duration_fixedodds)))
+```
+
+This correlation is much stronger for the controls, which make sense: some RG's
+have probably had a long time of gambling before which apparently did not bore
+them, are maybe addicted and are therefor not so prone to being bored.
+
+This supports the idea that the RG group is, in this sense, different from the
+control group an frequency.
+
+Now look at bets per day:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+with(subset(gam, !is.na(duration_fixedodds)),
+     cor.test(duration_fixedodds,
+              bets_per_day_fixedodds))
+
+# head(subset(gam, !is.na(duration_fixedodds)))
+```
+
+A significant (p<0.001), but otherwise not a very high correlation between bets
+per day and the duration it seems.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+with(subset(RGset, !is.na(duration_fixedodds)),
+     cor.test(duration_fixedodds, bets_per_day_fixedodds))
+
+with(subset(Controlset, !is.na(duration_fixedodds)),
+     cor.test(duration_fixedodds, bets_per_day_fixedodds))
+
+# head(subset(gam, !is.na(duration_fixedodds)))
+```
+
+And not a lot effect when you split the groups. This advocates the idea that the
+RG_group and the control group are not so different when it comes to bets made
+per day.
+
+
+So we have two different stories. We can view this relation better by looking at
+some plots:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x=duration_fixedodds, y = frequency_fixedodds),
+      data = subset(gam, !is.na(Registration_Date_Year.largebucket)))+
+      geom_smooth(aes(color = Registration_Date_Year.largebucket))+
+      theme(legend.position="top", 
+            legend.text = element_text(size = 5), 
+            legend.title = element_text(size = 5))
+
+ggplot(aes(x=duration_fixedodds, y = bets_per_day_fixedodds),
+      data = subset(gam, !is.na(Registration_Date_Year.largebucket)))+
+      geom_smooth(aes(color = Registration_Date_Year.largebucket))+
+      theme(legend.position="top", 
+            legend.text = element_text(size = 5), 
+            legend.title = element_text(size = 5))
+```
+
+Naturally, the 'early subscribers (red line)' have a higher possible score on
+duration. Here we can see clearly that the variable duration even seems to be a
+short-term positive effect (for gamblers registered from 2007) on the amount of
+bets per day (those are the more dedicated players perhaps). While having a
+clear negative effect on the frequency.
+
+We can then go one step further and plug in the RG - non RG case to see if we
+can see the effect we already measured using correlation. We will investigate
+how registration date impacts (y=) frequency (= total days from first bet active
+bettingdays), when plotted over (x=) age, splitted by RG.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# see how registration date impacts frequency (= total days from first bet /
+# active bettingdays ) --> 
+ggplot(aes(x=age_at_registration, y = frequency_fixedodds),
+  data = subset(gam, !is.na(Registration_Date_Year.largebucket)))+
+  geom_smooth(aes(color = Registration_Date_Year.largebucket))+
+  coord_cartesian(ylim = c(0.1, 0.4), xlim = c(18,45)) +
+  facet_wrap(~RG_case, ncol = 1)+
+        theme(legend.position="top", 
+        legend.text = element_text(size = 5), 
+        legend.title = element_text(size = 5))
+
+```
+
+Interestingly, the control group seems to be higher in terms of frequency on
+fixed odds in the short term group (2007-2009). This could be explained by a
+more opportunistic 'thrill seeking' group versus a more long-term problematic
+group. The red and green line are very close to each other in the RG case, which
+reflects that the effect of the registration date (or duration as it is
+quantified in the dataset) on frequency is much lower than with the control
+case.
+
+In one plot for bets per day:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x=duration_fixedodds, y = bets_per_day_fixedodds),
+      data = subset(gam, !is.na(Registration_Date_Year.largebucket)))+
+      geom_smooth(aes(color = Registration_Date_Year.largebucket,
+                      linetype = RG_case))+
+      theme(legend.position="top", 
+            legend.text = element_text(size = 5), 
+            legend.title = element_text(size = 5))
+```
+
+Here we can see the difference between the two, and it becomes clear that RG
+cases are much higher and, just like the control group, not at all influenced by
+their registration date
+
+**Conclusion:** The original thought was that the control group was far more
+phrone to boredom than the RG group. This assumption seemed partly true, but
+only for the frequency of gambling. The amount of bets per day is much higher
+for the RG gamblers, but not significantly less (or more) influenced by the
+amount of time that someone has been registered.
+
+
+## 3.2 Many bets = less euro's per bet?
+
+Plotting the total:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y = euros_per_bet_fixedodds,
+           x = bets_per_day_fixedodds),
+       data = gam) +
+  geom_point() +
+  scale_x_log10()
+
+```
+
+This makes it seems like many bets = less euro's per bet.  
+
+Adding the log scale:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y = euros_per_bet_fixedodds,
+           x = bets_per_day_fixedodds, colour = 'orange'),
+       data = gam) +
+  geom_point(alpha = 1/10, size = 3, position = 'jitter') +
+  scale_x_log10() +
+  scale_y_log10()
+
+```
+
+The log scale shows that it is impossible to bet less than a euro, and that we
+can use jitter.
+
+Add the RG_case with colour
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y = euros_per_bet_fixedodds,
+           x = bets_per_day_fixedodds,
+           colour = RG_case),
+       data = gam) +
+  geom_point(alpha = 1/5, size = 3, position = 'jitter') +  
+  scale_x_log10() +
+  scale_y_log10(limits = c(0.8, 140))
+
+```
+
+Add the Registration date with colour
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y = euros_per_bet_fixedodds, x = bets_per_day_fixedodds,
+           colour = Registration_Date_Year.largebucket),
+       data = subset(gam, !is.na(Registration_Date_Year.largebucket))) +
+  geom_point(alpha = 1/2, size = 1, position = 'jitter') +  
+  scale_x_log10() +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank()) +
+  scale_y_log10(limits = c(0.8, 140))
+# there seem to be many people that have a lot of bets per day
+```
+
+There seem to be many more people that have a lot of bets per day and a lot of
+euro's per bet per day than the controls. So the big difference (small ratio) of
+gambling losses in RG versus control seems to be because of the number of bets
+and the euro's per bet.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y = euros_per_bet_fixedodds, x = bets_per_day_fixedodds),
+       data = gam) +
+  geom_point(alpha = 1/2, size = 1, position = 'jitter') +
+  scale_x_log10() +
+  stat_smooth(method = 'lm') +
+  facet_wrap(~RG_case, ncol = 1)+
+  scale_y_log10(limits = c(0.8, 500))
+
+```
+
+This relationship seems pretty equal over both variables, although the control
+line does seem to have a steeper curve. No signs of a logistic relationship
+between the variables. However, this tells us nothing about the significance of
+this relationship. For that, we have to look at the correlation:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+with(subset(gam, !is.na(bets_per_day_fixedodds)),
+     cor.test(bets_per_day_fixedodds, euros_per_bet_fixedodds))
+
+with(subset(RGset, !is.na(bets_per_day_fixedodds)),
+     cor.test(bets_per_day_fixedodds, euros_per_bet_fixedodds))
+
+with(subset(Controlset, !is.na(bets_per_day_fixedodds)),
+     cor.test(bets_per_day_fixedodds, euros_per_bet_fixedodds))
+
+```
+
+The steeper curve is of course reflected in the number -0.11 vs -0.7. More
+interestingly, both effects are significant. However, the difference between the
+two groups is fairly small. So there is a small difference in correlation when
+looking at the effect size.
+
+
+**Conclusion: **
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of \
+looking at your feature(s) of interest? Were there any interesting or surprising
+interactions between features?
+
+Coupling the data with different variables proved enriching: while the relation
+between duration and frequency is significant, adding the RG variable makes
+clear that this significant relation is far more powerfull for the control
+group.
+
+Still, it is not that simple that the control group is affected by
+time-orientated variabels and the RG group is not. The original thought was that
+the control group was far more phrone to boredom than the RG group. This
+assumption seemed partly true, but only for the frequency of gambling.
+
+The amount of bets per day is much higher for the RG gamblers, but not
+significantly less (or more) influenced by the amount of time that someone has
+been registered.  
+
+There also was a small difference in correlation when looking at the effect
+size.
+
+------
+
+# Final Plots and Summary
+
+
+### Plot One
+
+```{r echo=FALSE, Plot_One, message=FALSE, warning=FALSE}
+ggplot(aes(x = age_at_registration, y = bettingdays_fixedodds), data = gam) + 
+  labs(title = 'Plot 1: Active days per age category',
+       x = 'Age of participant',
+       y = 'Total days played fixed odds games squared') +
+  theme(axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        plot.title = element_text(size = 19)) +
+  xlim(18, 50) +
+  ylim(0, 2000)+
+  coord_trans(y = 'sqrt') +
+  geom_point(alpha = 1/5, 
+             position = position_jitter(h = 0),
+             color = 'darkgrey') +
+  facet_wrap(~RG_case, ncol = 2) +
+  geom_line(stat = 'summary',
+            fun.y = mean, size = 0.5,
+            linetype = 1,
+            aes(color = "Mean per age"))+
+  geom_line(stat = 'summary',
+            fun.y = median, size = 0.5,
+            linetype = 1,
+            aes(color = "Median per age") )+
+  scale_color_manual(name = "", 
+                     values = c("Mean per age" = "blue",
+                                "Median per age" = "red"))
+```
+
+### Description One
+When plotting in these scatterplots it becomes clear that:  
+1. The RG cases spend on average much more time gambling in every age group  
+2. The RG cases' median is much higher in every age group  
+3. The median is much smaller than the mean in both RG and control group on
+every age, so there are a lot of very high scores  
+4. We can see these high scores in the scatterplot, the RG group has much more 
+extreme cases in nearly every age group  
+5. The RG group is also much more diverse than the control group, more spread 
+across the y axis is.  
+6. There is much more data on younger players (scatter), hence the less stable 
+line when age increases (and hence the cut off point)  
+7 people who do not spend time in RG are cut off, the zero line is empty.  
+  
+* I also plotted this in one graph (see before), but it was too much information
+density for my taste.  
+
+The second plot will be a little bit simpler because it involves only two of the
+already used variables: total days played and the gamblers type (control or RG).
+Now however, we plot it against the sum of the total bets made:  
+
+### Plot Two
+```{r echo=FALSE, Plot_Two, message=FALSE, warning=FALSE}
+ggplot(aes(y = bettingdays_fixedodds, x = sum_bets_fixedodds, colour = RG_case),
+       data = gam) +
+  geom_point(alpha = 1/5, size = 1, position = 'jitter') +
+  labs(title = 'Plot 2: Active days per age category',
+       x = 'Total EUR bet on fixed odds games log 10 scale',
+       y = 'Total days played log10 scale') +
+  theme(axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        plot.title = element_text(size = 19)) +
+  stat_smooth(method = 'lm') +
+  scale_x_log10() +
+  scale_y_log10() +
+  coord_cartesian(ylim = c(1, 2000), xlim = c(1, 50000))
+```
+
+### Description Two
+Ignoring the obvious linear relation formed by the minimum bet per day, we can
+see that big spenders often also spend a lot of time and vice versa. This means
+we are not dealing with people who bet a large sum in one time, which also would
+be strange when considering the gambling type: sports betting with fixed odds.
+We
+also see a clear dominance by RG gamblers in both higher segments.  
+
+However, these two plots may give the false impression that the gamblers in the
+control group always display very normal behaviour next to the more extreme RG
+gambler. But we also checked for some more complex behaviour involving multiple
+variables. For instance, we looked at the impact of the time between the first
+and the last bet, the duration, and plotted how the median of the RG group
+compared to the Control group on the number of bets per day:  
+
+### Plot Three
+
+```{r echo=FALSE, Plot_Three, message=FALSE, warning=FALSE}
+ggplot(aes(x=duration_fixedodds, y = bets_per_day_fixedodds),
+      data = subset(gam, !is.na(Registration_Date_Year.largebucket)))+ 
+  labs(title = 'Plot 3: Bets per day per registration and gamble cat.', 
+       x = 'Total days from first bet to last bet', 
+       y = 'Bets per day on fixed odds games') +
+  theme(axis.title.x = element_text(size = 12), 
+        axis.title.y = element_text(size = 12), 
+        plot.title = element_text(size = 19)) +
+      geom_smooth(aes(color = Registration_Date_Year.largebucket, 
+                      linetype = RG_case))+
+      theme(legend.position="top", 
+            legend.text = element_text(size = 5), 
+            legend.title = element_text(size = 5))
+```
+
+### Description Three
+
+It becomes clear that RG cases are, no matter the duration and no matter the
+registration date, much more likely to place more bets per day; their median is
+much higher. Naturally, the most early registered gamblers (red line) have the
+ability to gamble the longest, and the confidence interval becomes much wider
+when there is less data. Interestingly however, the control group, just like the
+RG gamblers, are not at all influenced by how long they have been gambling. This
+is surprising, because the original thought was that the control group was far
+more phrone to boredom than the RG group. This assumption seemed partly true,
+but only for the frequency of gambling. The amount of bets per day is much
+higher for the RG gamblers, but not significantly less (or more) influenced by
+the amount of time that someone has been registered.
+
+------
+
+# Reflection
+
+One of the major problems we faced was getting the data ready for use in R.
+Datetime data and .dat files that did not load correctly were just two of a
+whole load of time consuming measures that had to be taken. However, it was also
+very rewarding because we gained a clear understanding of this dataset. I knew
+that a clear separation was made between the RG gamblers and the control
+variables because of the codebook and article that was written about it, but
+these remain abstract if one does not has to put so much effort in wrangling the
+data before analysing it.
+
+Between the RG cases and the control cases we saw some very clear differences on
+behavioural categories, while the geographical variables (age, country) were
+very evenly distributed. For this, we used several plots and the t-test and R
+squared. The greatest surprises were the huge differences in median and mean; I
+thought that this would indicate that the control group must be very different
+from the RG group.
+
+Still, it is not that simple that the control group is affected by
+time-orientated variabels and the RG group is not. The original thought was that
+the control group was far more phrone to boredom than the RG group. This
+assumption seemed partly true, but only for the frequency of gambling.
+
+Next, a model can be build out of these variables, but since I spend a lot of
+time getting the data in R, this fell outside the scope of this project.
+
+> **Sources**:
+
+Division on Addiction, Behavioral characteristics of Internet gamblers who
+trigger corporate responsible gambling interventions. 5. Medford, MA: Division
+on Addiction, The Transparency Project [BWin], November
+13/11/17, 2017.
+
+https://stackoverflow.com/questions/7963898/extracting-the-last-n-characters-fro
+m-a-string-in-r  
+
+http://blog.minitab.com/blog/adventures-in-statistics-2/how-to-correctly-interpr
+et-p-values  
+
+https://statistics.berkeley.edu/computing/r-t-tests  
+
+https://www.graphpad.com/guides/prism/7/statistics/how_the_unpaired_t_test_works
+2.htm?toc=0&printWindow  
+
+https://stats.stackexchange.com/questions/230556/calculate-r-square-in-r-for-two
+-vectors  
+
+http://ggplot2.tidyverse.org/reference/labs.html  
+
+http://www.theanalysisfactor.com/r-tutorial-4/  

@@ -1,0 +1,424 @@
+---
+title: "League of Legends"
+output:
+  html_document:
+    keep_md: true
+---
+Research question: see dreamteam files
+========================================================
+#### Table of content (type of analysis)
+Section 0: preparing data (no results shown)  
+Section 1: exploring variables and relations (mostly univariate and some
+bivariate)
+Section 2: exploring differnces between results (won/vs lost) and control (bi- and multivariate)  
+Section 3: other relations between variables (bi- and multivariate)  
+Section 4: building models  
+Section 5: testing models
+
+> **Data source**: League of Legends competitive matches between 2015-2017. The matches include the NALCS, EULCS, LCK, LMS, and CBLoL leagues as well as the World Championship and Mid-Season Invitational tournaments. https://www.kaggle.com/chuckephron/leagueoflegends
+
+```{r "0.1 packages"}
+
+library(pscl)
+library(ROCR)
+library(taRifx)
+library(ggplot2)
+# library(bitops)
+library(tidyr)
+# library(RCurl)
+# library(ggthemes)
+# library(foreign)
+# library(grid)
+# library(RColorBrewer)
+# library(gridExtra)
+# library(reshape2)
+library(stringr)
+# library(scales)
+library(dplyr)
+library(GGally)
+# library(memisc)
+# library(lattice)
+# library(MASS)
+```
+
+```{r "0.2 Load_the_Data"}
+# Source: https://www.kaggle.com/chuckephron/leagueoflegends
+getwd()
+
+# Tip: don't run seperately with load command.
+# PC:
+# setwd('C:/Users/Gebruiker 1/Dropbox/NUS/Data mining/leagueoflegends')
+# laptop:
+setwd('C:/Users/User/Dropbox/NUS/Data mining/leagueoflegends')
+
+# load data file
+matches <- read.csv("matches.csv", header=TRUE, sep=",")
+```
+
+
+```{r "0.3 Functions"}
+
+# 0.3.1 cuberoot
+cuberoot_trans = function() trans_new('cuberoot', 
+                                      transform = function(x) x^(1/3), 
+                                      inverse = function(x) X^3)
+
+# 0.3.2 Define new column names: takes in the max number for column and a name, outputs multiple columns
+# Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
+create_column_names <- function(columns, namestring){
+  maxnr <- max(matches$columns)
+  vectofnr = c();
+  for (i in 1:81){
+    # print(i)
+    vectofnr[i] <- paste(namestring, as.character(i), sep="_")
+    # print(vectofnr)
+  }
+  return(vectofnr)
+}
+
+ 
+# because it is so slow, maybe you can also put it in a global var:
+# listofcolumns <- create_column_names(gamelength, 'gold')
+
+# 0.3.3 remove the first and last char
+remove_first_last <- function(inputstring){
+  return(substring(inputstring, 2, str_length(inputstring)-1))
+}
+
+```
+
+
+```{r "0.4 Data Wrangling"}
+
+# 0.4.1 viewing & correcting types
+str(matches)
+# Types seem ok, but have to correct the adjusted variables.
+
+## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
+matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+
+## 0.4.3 get rid of [ & ] for later use --> only use once!
+matches$goldblue <- remove_first_last(matches$goldblue)
+matches$golddiff <- remove_first_last(matches$golddiff)
+matches$goldred <- remove_first_last(matches$goldred)
+
+
+## 0.4.4 Square the data if scewed 
+
+# to do
+
+```
+
+
+```{r "0.5 New variables"}
+# make a better match variable for easy reading.
+matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+
+# make a better time variable out of year and season
+matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
+
+str(matches$YearSeason)
+summary(matches$Season)
+
+
+matches$YearSeason <- as.Date(matches$YearSeason, format = "%d/%m/%Y")
+
+summary(matches$YearSeason)
+```
+
+```{r "0.6 Making subsets"}
+# It gets messy very easily so extra dataset instead of extra variable:
+matches_seperated <- matches %>%
+  separate(as.numeric(golddiff), into = c(create_column_names(gamelength, "gold_diff_in_minute")), sep = "\\,")
+
+# Make them numeric
+matches_seperated <- japply(matches_seperated, c(create_column_names(gamelength, "gold_diff_in_minute")), as.numeric )
+# Hooray it works:
+str(matches_seperated$gold_diff_in_minute_80)
+
+
+matches$golddiff <- NULL
+matches_seperated$golddiff <- NULL
+
+# may be interesting to make a red vs blue won dataset.
+
+blueset <- subset(matches, winner == 'blue')
+redset <- subset(matches, winner == 'red')
+```
+
+# 1. EXPLORING THE DATA SET (univariate and some bivariate).
+
+## 1.1 First exploratory plots (see below graph for analysis)
+
+```{r}
+# Get the names
+names(matches)
+# 58 original vars
+
+str(matches)
+# So there are 185 teams --> seems like a lot? Do teams change from name? Do members change?
+
+# this runs a whole summary (lot of work):
+summary(matches)
+
+table(matches$winner)
+# ---> so blue wins (a lot) more
+```
+
+Observations:
+Regional competition is very small: 143... exclude those if they behave very differently
+
+There are two seasons, so we seem to have Year*Season = 4*2=8 time values
+
+Game length mean and median are very close: so it is not scewed.
+
+Most notable is the choice for Maokai for top red--> he is a lot more favorite for red than blue...
+
+## 1.2 First exploratory plots: length of the game and the different leagues, types & timeframes(seasons)
+
+How are the leagues distributed (univariate)?  
+```{r "1.2 First exploratory plots"}
+qplot(x = League, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('blue'))
+```
+A lot of variation, with clear distinction. The game should function the same across the leagues.
+
+How are the types distributed (univariate)?  
+```{r }
+qplot(x = Type, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('yellow'))
+summary(matches$Type)
+```
+Huge difference between season and regional --> see if regional behaves differently, maybe exclude from sample
+
+How are the seasons distributed (univariate)?  
+```{r }
+qplot(x = Type, data = matches,
+      xlab = 'league',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('yellow'))
+summary(matches$Type)
+```
+
+
+
+
+
+How is the time distributed (univariate)?  
+```{r}
+qplot(x = gamelength, data = matches,
+      xlab = 'length of game',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('purple')) +
+  scale_x_continuous()
+```
+Like we saw from the summary, the data is nicely distributed. It is also clear that it is almost impossible to win this game in the first 20 minutes in the professional spfere.
+
+How are the matches distributed of the seasons (univariate)?  
+```{r}
+qplot(x = YearSeason, data = matches,
+      xlab = 'Season',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('purple'))
+```
+Wow, there is way more data from later timeslots...
+
+How is the time distributed over the different leagues (bivar)?
+
+```{r}
+ggplot(aes(x = gamelength, y = YearSeason), data = matches) + 
+  geom_point(alpha = 1/6, color = 'red', position = position_jitter(h = 0)) +
+  xlim(16, 80) 
+```
+Not much to see, the games are getting longer, but also much more data so no real conclusion to be made
+
+# 2. HOW DO WINNING TEAMS DIFFER FROM LOSERS?
+
+
+## 2.1 first exploration
+
+All fixed odds + handy created variables. countryname & languagename were not
+allowed (too many variables), and done twice to keep overview. RG and Reg. date
+in both sets. Most interested in how RG cases compare, so it is handy to keep
+those on the first line.
+
+```{r "explore the correlations"}
+
+matches_seperated$gold_diff_in_minute_1 <- as.numeric(matches_seperated$gold_diff_in_minute_1)
+
+set.seed(1836)
+
+## Multiple t-tests for golddiff in xth minute.
+lapply(matches_seperated[,c("gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3","gold_diff_in_minute_4", "gold_diff_in_minute_5", "gold_diff_in_minute_6", "gold_diff_in_minute_7", "gold_diff_in_minute_8", "gold_diff_in_minute_9", "gold_diff_in_minute_10","gold_diff_in_minute_11","gold_diff_in_minute_12","gold_diff_in_minute_13","gold_diff_in_minute_14","gold_diff_in_minute_15")], function(x) t.test(x ~ matches_seperated$rResult))
+# Wow already in the second minute we can see that the gold difference is a significant predictor for winning or losing! 
+
+# make a subset
+match_subset <- matches_seperated[,c("rResult", "gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3","gold_diff_in_minute_4", "gold_diff_in_minute_5", "gold_diff_in_minute_6", "gold_diff_in_minute_7", "gold_diff_in_minute_8", "gold_diff_in_minute_9", "gold_diff_in_minute_10","gold_diff_in_minute_11","gold_diff_in_minute_12","gold_diff_in_minute_13","gold_diff_in_minute_14","gold_diff_in_minute_15")]
+
+# This gets reflected in the heatmap:
+ggcorr(match_subset)
+
+```
+
+Already in the second minute we can see that the gold difference is a significant predictor for winning or losing! 
+
+
+```{r "rough exploration"}
+# do some rough exploration
+rough_subset <- matches_seperated[,c("rResult", "gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3", "League", "Type")]
+
+rough_subset <- matches_seperated[,c("rResult", "League", "Type")]
+
+# This one is computationally very heavy and does not give nice results for our dataset, there seems to be a difference in leagues but it is hard to see:
+ggpairs(rough_subset) +
+  theme(
+    axis.text = element_text(size = 3),
+    axis.title = element_text(size = 2),
+    legend.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(colour = NA),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "grey95"))
+```
+There seems to be a difference in leagues
+
+
+```{r "why/where does blue wins more than red"}
+# Use winner instead of Rresult to get instant nice columns:
+qplot(x = winner, data = matches) +
+  facet_grid(.~Type)
+# The mayor difference between the blue and red seems to be in the regular season
+
+qplot(x = winner, data = matches) +
+  facet_grid(.~League)
+# Only in one league the difference between red and blue is tilted the other way. More plays seems to indicate bigger differences.
+```
+Only in one league the difference between red and blue is tilted the other way. More plays seems to indicate bigger differences.
+
+```{r "splitting the data into training and test in a simple way"}
+## get 75% for training
+sampel <- floor(.75 * nrow(matches_seperated))
+
+## set the seed to make your partition reproductible
+set.seed(900)
+train_ind <- sample(seq_len(nrow(matches_seperated)), size = sampel)
+
+train <- matches_seperated[train_ind, ]
+test <- matches_seperated[-train_ind, ]
+```
+
+
+FROM HERE STARTS MY NEW ANALYSIS:
+
+
+
+# 4. BUILDING THE MODELS.
+
+## 4.1 Logistic regression
+
+See https://www.statmethods.net/advstats/glm.html
+
+We have seen now that blue has a slight advantage. 
+Now let us see if we can easily predict the winner of the match. 
+
+We will do this by looking at the column 'blue_wins':
+```{r "let's try some regression1"}
+# Logistic regression is the only valid option: http://thestatsgeek.com/2015/01/17/why-shouldnt-i-use-linear-regression-if-my-outcome-is-binary/ https://www.statmethods.net/advstats/glm.html
+
+# fit the model
+LogModel1 <- glm(bResult ~ gold_diff_in_minute_5 ,family=binomial(link='logit'),data=train)
+
+# look at a summary of it
+summary(LogModel1)
+```
+You can see that five minutes in the game, the gold difference is already a siginificant predictor.
+
+Is computed by blue - red, so it makes sense that this is a positive predictor.
+
+This will change when we add more of those gold_diff variables (due to multicollinearity):
+```{r "let's try some regression2"}
+
+# adding more variables:
+LogModel2a <- glm(bResult ~ gold_diff_in_minute_5 + gold_diff_in_minute_10 + gold_diff_in_minute_15 + gold_diff_in_minute_20 ,family=binomial(link='logit'),data=train)
+
+LogModel2b <- glm(bResult ~ gold_diff_in_minute_15 + gold_diff_in_minute_10 + gold_diff_in_minute_5 + gold_diff_in_minute_20 ,family=binomial(link='logit'),data=train)
+
+
+# look at a summary of it
+summary(LogModel2a)
+
+summary(LogModel2b)
+```
+I made two because later on, when evaluating, we can see the order does matter.
+
+
+```{r "let's try some regression3"}
+
+# adding more variables THIS SHOULD BE ADDED BY STUFF LIKE FIRST KILL BARON, FIRST KILL DRAGON ETC.:
+LogModel3 <- glm(bResult ~ gold_diff_in_minute_5 + gamelength, family=binomial(link='logit'),data=train)
+
+# look at a summary of it
+summary(LogModel3)
+```
+Interestingly, the gamelength seems to have a significant additional negative relation with whether the blue team won. So the faster the game, the more likely the blue team wins. In this specific combination (with only two variables), every minute a game is shorter increases the log odds of blue winning by 0.0122. Blue seems to have more potential for a quick win. WE SHOULD ADD MORE VARIABLES.
+
+Now we can run the anova() function on the model to analyze the table of deviance:
+```{r "let's try some regression4"}
+
+# adding more variables THIS SHOULD BE ADDED BY STUFF LIKE FIRST KILL BARON, FIRST KILL DRAGON ETC.:
+anova(LogModel1, test="Chisq")
+anova(LogModel2a, test="Chisq")
+anova(LogModel2b, test="Chisq")
+anova(LogModel3, test="Chisq")
+```
+What you would like to see is a significant drop in deviance and the AIC. you can see is that, if you put the later golddiff in first, the earlier ones will lose all their power. It also shows that deviance interpretation can be tricky: the order of variables you put in matters a lot.
+```{r "let's try some regression5"}
+
+# While no exact equivalent to the R2 of linear regression exists, the McFadden R2 index can be used to assess the model fit.
+# install.packages("pscl")
+# library(pscl)
+pR2(LogModel3)
+
+```
+I think McFadden's R2 shows that the model with 2 variables is very weak
+
+
+# 5. TESTING THE MODELS.
+
+## 5.1 Testing using the simple split
+
+https://www.r-bloggers.com/how-to-perform-a-logistic-regression-in-r/
+In the steps above, we briefly evaluated the fitting of the model, now we would like to see how the model is doing when predicting y on a new set of data. By setting the parameter type='response', R will output probabilities in the form of P(y=1|X). Our decision boundary will be 0.5. If P(y=1|X) > 0.5 then y = 1 otherwise y=0. Note that for some applications different thresholds could be a better option.
+
+```{r "Testing the models1"}
+
+fitted.results <- predict(LogModel1,test,type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+misClasificError <- mean(fitted.results != test$bResult)
+print(paste('Accuracy',1-misClasificError))
+
+```
+Original was predict(model,newdata=subset(test,select=c(2,3,4,5,6,7,8)), not sure why they used this subset.
+
+this result is somewhat dependent on the manual split of the data that I made earlier, therefore if you wish for a more precise score, you would be better off running some kind of cross validation such as k-fold cross validation.
+
+```{r "Testing the models2"}
+
+# install.packages("ROCR")
+# library(ROCR)
+p <- predict(LogModel3, test, type="response")
+pr <- prediction(p, test$bResult)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+
+```
+Original was newdata=subset(test,select=c(2,3,4,5,6,7,8)), type="response"), but not sure why they used subset
+
+If you change the variables to LogModel2b you obviously get a much nicer prediction.
