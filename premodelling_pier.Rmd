@@ -2,8 +2,9 @@
 title: "Premodelling data preparation"
 author: "pier"
 output:
+  pdf_document: default
   html_document:
-    keep_md: true
+    keep_md: yes
 ---
 
 
@@ -97,50 +98,58 @@ matches$isRedPreferredLineup <- 0
 matches$isBluePreferredChamps <- 0
 matches$isRedPreferredChamps <- 0
 
-for (row  in 1:nrow(combinedPlayed)) {
-  #print(combinedPlayed[row,])
-  Team <- combinedPlayed[row, 1]
-  if (is.na(Team)) next # skip nonsense no team name data
-  
-  # Get all instances of when this team wins (blue/red)
-  blueWins <- subset(matches, (matches$blueTeamTag==Team & matches$bResult==1))
-  redWins <- subset(matches, (matches$redTeamTag==Team & matches$rResult==1))
-  
-  # In all the blueWins for this team, get the most popular player for each pos
-  btop <- names (sort(table(blueWins$blueTop), decreasing=TRUE)[1] )
-  badc <- names (sort(table(blueWins$blueADC), decreasing=TRUE)[1] )
-  bjungle <- names (sort(table(blueWins$blueJungle), decreasing=TRUE)[1])
-  bsupport <- names (sort(table(blueWins$blueSupport), decreasing=TRUE)[1])
-  bmiddle <- names (sort(table(blueWins$blueMiddle), decreasing=TRUE)[1])
-  
-  # In all the redWins for this team, get the most popular player for each pos
-  rtop <- names (sort(table(redWins$redTop), decreasing=TRUE)[1] )
-  radc <- names (sort(table(redWins$redADC), decreasing=TRUE)[1] )
-  rjungle <- names (sort(table(redWins$redJungle), decreasing=TRUE)[1])
-  rsupport <- names (sort(table(redWins$redSupport), decreasing=TRUE)[1])
-  rmiddle <- names (sort(table(redWins$redMiddle), decreasing=TRUE)[1])
-  
-  # Mark all those matches that fit this particular combi for this team as having the preferred line-up
-  matches$isBluePreferredLineup <- ifelse((matches$blueTop==btop & matches$blueADC==badc & matches$blueJungle==bjungle & matches$blueSupport==bsupport & matches$blueMiddle==bmiddle), 1, matches$isBluePreferredLineup)
-  matches$isRedPreferredLineup <- ifelse((matches$redTop==rtop & matches$redADC==radc & matches$redJungle==rjungle & matches$redSupport==rsupport & matches$redMiddle==rmiddle), 1, matches$isRedPreferredLineup)
-  
-  # In all the blueWins for this team, get the most popular champion for each pos
-  btopChamp <- names (sort(table(blueWins$blueTopChamp), decreasing=TRUE)[1] )
-  badcChamp <- names (sort(table(blueWins$blueADCChamp), decreasing=TRUE)[1] )
-  bjungleChamp <- names (sort(table(blueWins$blueJungleChamp), decreasing=TRUE)[1])
-  bsupportChamp <- names (sort(table(blueWins$blueSupportChamp), decreasing=TRUE)[1])
-  bmiddleChamp <- names (sort(table(blueWins$blueMiddleChamp), decreasing=TRUE)[1])
-  
-  # In all the redWins for this team, get the most popular champion for each pos
-  rtopChamp <- names (sort(table(redWins$redTopChamp), decreasing=TRUE)[1] )
-  radcChamp <- names (sort(table(redWins$redADCChamp), decreasing=TRUE)[1] )
-  rjungleChamp <- names (sort(table(redWins$redJungleChamp), decreasing=TRUE)[1])
-  rsupportChamp <- names (sort(table(redWins$redSupportChamp), decreasing=TRUE)[1])
-  rmiddleChamp <- names (sort(table(redWins$redMiddleChamp), decreasing=TRUE)[1])
-  
-  # Mark all those matches that fit this particular combi for this team as having the preferred champions line-up
-  matches$isBluePreferredChamps <- ifelse((matches$blueTopChamp==btopChamp & matches$blueADCChamp==badcChamp & matches$blueJungleChamp==bjungleChamp & matches$blueSupportChamp==bsupportChamp & matches$blueMiddleChamp==bmiddleChamp), 1, matches$isBluePreferredChamps)
-  matches$isRedPreferredChamps <- ifelse((matches$redTopChamp==rtopChamp & matches$redADCChamp==radcChamp & matches$redJungleChamp==rjungleChamp & matches$redSupportChamp==rsupportChamp & matches$redMiddleChamp==rmiddleChamp), 1, matches$isRedPreferredChamps)
+seasons = data.frame(table(matches$YearSeason))
+names(seasons)[names(seasons) == 'Var1'] <- 'YearSeasons'
+
+for (season_num in 1:nrow(seasons)) {
+  Season <- seasons[season_num,1] # 7 in total
+  match_season <- subset(matches, (matches$YearSeason==Season)) # extract only matches for this season
+
+  for (row  in 1:nrow(combinedPlayed)) { 
+    #print(combinedPlayed[row,])
+    Team <- combinedPlayed[row, 1]
+    if (is.na(Team)) next # skip nonsense no team name data
+    
+    # Get all instances of when this team wins for this season (blue/red)
+    blueWins <- subset(matches, (matches$blueTeamTag==Team & matches$bResult==1 & matches$YearSeason==Season))
+    redWins <- subset(matches, (matches$redTeamTag==Team & matches$rResult==1 & matches$YearSeason==Season))
+    
+    # In all the blueWins for this team, get the most popular player for each pos for THIS SEASON
+    btop <- names (sort(table(blueWins$blueTop), decreasing=TRUE)[1] )
+    badc <- names (sort(table(blueWins$blueADC), decreasing=TRUE)[1] )
+    bjungle <- names (sort(table(blueWins$blueJungle), decreasing=TRUE)[1])
+    bsupport <- names (sort(table(blueWins$blueSupport), decreasing=TRUE)[1])
+    bmiddle <- names (sort(table(blueWins$blueMiddle), decreasing=TRUE)[1])
+    
+    # In all the redWins for this team, get the most popular player for each pos for THIS SEASON
+    rtop <- names (sort(table(redWins$redTop), decreasing=TRUE)[1] )
+    radc <- names (sort(table(redWins$redADC), decreasing=TRUE)[1] )
+    rjungle <- names (sort(table(redWins$redJungle), decreasing=TRUE)[1])
+    rsupport <- names (sort(table(redWins$redSupport), decreasing=TRUE)[1])
+    rmiddle <- names (sort(table(redWins$redMiddle), decreasing=TRUE)[1])
+    
+    # Mark all those matches in main df that fit this particular combi for this team as having the preferred line-up
+    matches$isBluePreferredLineup <- ifelse((matches$blueTop==btop & matches$blueADC==badc & matches$blueJungle==bjungle & matches$blueSupport==bsupport & matches$blueMiddle==bmiddle & matches$YearSeason==Season), 1, matches$isBluePreferredLineup)
+    matches$isRedPreferredLineup <- ifelse((matches$redTop==rtop & matches$redADC==radc & matches$redJungle==rjungle & matches$redSupport==rsupport & matches$redMiddle==rmiddle  & matches$YearSeason==Season), 1, matches$isRedPreferredLineup)
+    
+    # In all the blueWins for this team, get the most popular champion for each pos
+    btopChamp <- names (sort(table(blueWins$blueTopChamp), decreasing=TRUE)[1] )
+    badcChamp <- names (sort(table(blueWins$blueADCChamp), decreasing=TRUE)[1] )
+    bjungleChamp <- names (sort(table(blueWins$blueJungleChamp), decreasing=TRUE)[1])
+    bsupportChamp <- names (sort(table(blueWins$blueSupportChamp), decreasing=TRUE)[1])
+    bmiddleChamp <- names (sort(table(blueWins$blueMiddleChamp), decreasing=TRUE)[1])
+    
+    # In all the redWins for this team, get the most popular champion for each pos
+    rtopChamp <- names (sort(table(redWins$redTopChamp), decreasing=TRUE)[1] )
+    radcChamp <- names (sort(table(redWins$redADCChamp), decreasing=TRUE)[1] )
+    rjungleChamp <- names (sort(table(redWins$redJungleChamp), decreasing=TRUE)[1])
+    rsupportChamp <- names (sort(table(redWins$redSupportChamp), decreasing=TRUE)[1])
+    rmiddleChamp <- names (sort(table(redWins$redMiddleChamp), decreasing=TRUE)[1])
+    
+    # Mark all those matches that fit this particular combi for this team as having the preferred champions line-up
+    matches$isBluePreferredChamps <- ifelse((matches$blueTopChamp==btopChamp & matches$blueADCChamp==badcChamp & matches$blueJungleChamp==bjungleChamp & matches$blueSupportChamp==bsupportChamp & matches$blueMiddleChamp==bmiddleChamp  & matches$YearSeason==Season), 1, matches$isBluePreferredChamps)
+    matches$isRedPreferredChamps <- ifelse((matches$redTopChamp==rtopChamp & matches$redADCChamp==radcChamp & matches$redJungleChamp==rjungleChamp & matches$redSupportChamp==rsupportChamp & matches$redMiddleChamp==rmiddleChamp & matches$YearSeason==Season), 1, matches$isRedPreferredChamps)
+  }
 }
 
 head(matches)
