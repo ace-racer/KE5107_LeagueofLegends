@@ -1,5 +1,6 @@
 ---
-title: "R Notebook"
+title: "Premodelling data preparation"
+author: "pier"
 output:
   html_document:
     keep_md: true
@@ -77,13 +78,13 @@ matches <- merge(combinedTeams_red, matches, by="redTeamTag")
 matches <- (matches[with(matches, order(matches$League)), ])
 head(matches)
 movetolast(matches, c("bWinEfficiency", "rWinEfficiency"))
-#write.csv(matches, file = "matches_processed.csv")
+
 
 
 ```
 
 
-** Derive parameter to see whether team is having their most effective line-up **
+** Derive parameter to see whether team is having their most effective line-up of players/champions **
 
 ```{r}
 
@@ -122,21 +123,26 @@ for (row  in 1:nrow(combinedPlayed)) {
   matches$isBluePreferredLineup <- ifelse((matches$blueTop==btop & matches$blueADC==badc & matches$blueJungle==bjungle & matches$blueSupport==bsupport & matches$blueMiddle==bmiddle), 1, matches$isBluePreferredLineup)
   matches$isRedPreferredLineup <- ifelse((matches$redTop==rtop & matches$redADC==radc & matches$redJungle==rjungle & matches$redSupport==rsupport & matches$redMiddle==rmiddle), 1, matches$isRedPreferredLineup)
   
+  # In all the blueWins for this team, get the most popular champion for each pos
   btopChamp <- names (sort(table(blueWins$blueTopChamp), decreasing=TRUE)[1] )
   badcChamp <- names (sort(table(blueWins$blueADCChamp), decreasing=TRUE)[1] )
   bjungleChamp <- names (sort(table(blueWins$blueJungleChamp), decreasing=TRUE)[1])
   bsupportChamp <- names (sort(table(blueWins$blueSupportChamp), decreasing=TRUE)[1])
   bmiddleChamp <- names (sort(table(blueWins$blueMiddleChamp), decreasing=TRUE)[1])
   
+  # In all the redWins for this team, get the most popular champion for each pos
   rtopChamp <- names (sort(table(redWins$redTopChamp), decreasing=TRUE)[1] )
   radcChamp <- names (sort(table(redWins$redADCChamp), decreasing=TRUE)[1] )
   rjungleChamp <- names (sort(table(redWins$redJungleChamp), decreasing=TRUE)[1])
   rsupportChamp <- names (sort(table(redWins$redSupportChamp), decreasing=TRUE)[1])
   rmiddleChamp <- names (sort(table(redWins$redMiddleChamp), decreasing=TRUE)[1])
   
+  # Mark all those matches that fit this particular combi for this team as having the preferred champions line-up
   matches$isBluePreferredChamps <- ifelse((matches$blueTopChamp==btopChamp & matches$blueADCChamp==badcChamp & matches$blueJungleChamp==bjungleChamp & matches$blueSupportChamp==bsupportChamp & matches$blueMiddleChamp==bmiddleChamp), 1, matches$isBluePreferredChamps)
   matches$isRedPreferredChamps <- ifelse((matches$redTopChamp==rtopChamp & matches$redADCChamp==radcChamp & matches$redJungleChamp==rjungleChamp & matches$redSupportChamp==rsupportChamp & matches$redMiddleChamp==rmiddleChamp), 1, matches$isRedPreferredChamps)
 }
 
+head(matches)
+write.csv(matches, file = "./processed/matches_processed.csv")
 ```
 
