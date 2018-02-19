@@ -45,7 +45,7 @@ first_kill_columns_with_result <- c("TowersFirstKillBy", "InhibsFirstKillBy", "D
 first_kills_correlation <- cor(matches_data[,unlist(first_kill_columns_with_result)])
 corrplot(first_kills_correlation, method = "circle")
 ```
-Add code to gain insights from the other new features 
+## Add code to gain insights from the other new features 
 
 ```{r}
 ```
