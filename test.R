@@ -1,8 +1,9 @@
 
 rm(list=ls())
-#matches = read.csv('C:\\Users\\pierl\\Dropbox\\Machine_Learning\\KE5107\\processed\\matches.csv')
-matches = read.csv('/Users/pierlim/Dropbox/Machine_Learning/KE5107/processed/matches.csv')
+matches = read.csv('C:\\Users\\pierl\\Dropbox\\Machine_Learning\\KE5107\\processed\\matches.csv')
+#matches = read.csv('/Users/pierlim/Dropbox/Machine_Learning/KE5107/processed/matches.csv')
 matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
+
 
 library(data.table)
 library(ggplot2)
@@ -75,11 +76,15 @@ for (season_num in 1:nrow(seasons)) {
   for (row  in 1:nrow(combinedPlayed)) { 
     #print(combinedPlayed[row,])
     Team <- combinedPlayed[row, 1]
+    print(Team)
     if (is.na(Team)) next # skip nonsense no team name data
     
     # Get all instances of when this team wins for this season (blue/red)
-    blueWins <- subset(matches, (matches$blueTeamTag==Team & matches$bResult==1 & matches$YearSeason==Season))
-    redWins <- subset(matches, (matches$redTeamTag==Team & matches$rResult==1 & matches$YearSeason==Season))
+    #blueWins <- subset(matches, (matches$blueTeamTag==Team & matches$bResult==1 & matches$YearSeason==Season))
+    #redWins <- subset(matches, (matches$redTeamTag==Team & matches$rResult==1 & matches$YearSeason==Season))
+    
+    blueWins <- matches[which(matches$blueTeamTag==Team & matches$bResult==1 & matches$YearSeason==Season),]
+    redWins <- matches[which(matches$redTeamTag==Team & matches$rResult==1 & matches$YearSeason==Season),]
     
     # In all the blueWins for this team, get the most popular player for each pos for THIS SEASON
     btop <- names (sort(table(blueWins$blueTop), decreasing=TRUE)[1] )
@@ -120,5 +125,3 @@ for (season_num in 1:nrow(seasons)) {
 }
 
 head(matches)
-write.csv(matches, file = "./processed/matches_processed.csv")
-```

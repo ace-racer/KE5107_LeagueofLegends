@@ -92,6 +92,7 @@ movetolast(matches, c("bWinEfficiency", "rWinEfficiency"))
 
 library(plyr)
 
+
 # add new columns to matches
 matches$isBluePreferredLineup <- 0
 matches$isRedPreferredLineup <- 0
@@ -103,8 +104,8 @@ names(seasons)[names(seasons) == 'Var1'] <- 'YearSeasons'
 
 for (season_num in 1:nrow(seasons)) {
   Season <- seasons[season_num,1] # 7 in total
-  match_season <- subset(matches, (matches$YearSeason==Season)) # extract only matches for this season
-
+  #match_season <- subset(matches, (matches$YearSeason==Season)) # extract only matches for this season
+  #print(Season)
   for (row  in 1:nrow(combinedPlayed)) { 
     #print(combinedPlayed[row,])
     Team <- combinedPlayed[row, 1]
@@ -151,6 +152,7 @@ for (season_num in 1:nrow(seasons)) {
     matches$isRedPreferredChamps <- ifelse((matches$redTopChamp==rtopChamp & matches$redADCChamp==radcChamp & matches$redJungleChamp==rjungleChamp & matches$redSupportChamp==rsupportChamp & matches$redMiddleChamp==rmiddleChamp & matches$YearSeason==Season), 1, matches$isRedPreferredChamps)
   }
 }
+
 
 head(matches)
 write.csv(matches, file = "./processed/matches_processed.csv")
