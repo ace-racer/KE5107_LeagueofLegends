@@ -3,9 +3,9 @@ title: "Process the league of legends dataset"
 output: html_notebook
 ---
 
-## Global configuration variables
+## Global configuration variables to control the data in the generated file
 ```{r}
- shouldDiscardTimeSeriesColumnsFromProcessedFile <- TRUE
+ shouldDiscardTimeSeriesColumnsFromProcessedFile <- FALSE
  processedFileNameWithExtension <- "processed_matches.csv"
 ```
 
@@ -20,36 +20,36 @@ output: html_notebook
 library(stringr)
 
 setwd("H:\\KE 5107 Projects\\code\\KE5107_LeagueofLegends")
-matches_data = read.csv("data/matches.csv")
-game_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
+matchesData = read.csv("data/matches.csv")
+gameElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
 # Prepends r to the item
-prependRed <- function(p){
+prependRed <- function(p) {
   paste("r", p, sep="")
 }
 
 # Prepends b to the item
-prependBlue <- function(p){
+prependBlue <- function(p) {
   paste("b", p, sep="")
 }
 
 # Get the smallest number from a series of numbers
-getSmallestNumber <- function(value){
-  if(value != "[]"){
+getSmallestNumber <- function(value) {
+  if (value != "[]") {
     # Get all the number strings from the list
-    all_numbers = str_extract_all(value, "[0-9]*[.][0-9]*")
+    allNumbers <- str_extract_all(value, "[0-9]*[.][0-9]*")
     
     # Get the number strings in a list
-    all_numbers_list = unlist(all_numbers)
+    allNumbersList <- unlist(allNumbers)
     
     # Convert each item to a number
-    all_numbers_list = as.numeric(all_numbers_list)
+    allNumbersList <- as.numeric(allNumbersList)
     
     # Sort all the numbers
-    all_numbers_list_sorted = all_numbers_list[order(all_numbers_list)]
+    allNumbersListSorted <- allNumbersList[order(allNumbersList)]
     
     # Get the first number
-    return(all_numbers_list_sorted[1])
+    return(allNumbersListSorted[1])
   }
   
   # A high value if the no number is not present
@@ -57,75 +57,71 @@ getSmallestNumber <- function(value){
 }
 
 # Get the Kills columns for blue and red teams
-blue_kills_columns <- lapply(game_elements, prependBlue)
-red_kills_columns <- lapply(game_elements, prependRed)
+blueKillsColumns <- lapply(gameElements, prependBlue)
+redKillsColumns <- lapply(gameElements, prependRed)
 
 # Combine the Kills columns
-all_kills_columns <- c(blue_kills_columns, red_kills_columns)
+allKillsColumns <- c(blueKillsColumns, redKillsColumns)
 
-for(i in 1:length(all_kills_columns))
-{
-  column_name <- unlist(all_kills_columns[i])
-  output_column_name <- paste(column_name, "Num", sep="")
+for(i in 1:length(allKillsColumns)) {
+  columnName <- unlist(allKillsColumns[i])
+  outputColumnName <- paste(columnName, "Num", sep="")
   
   # Each item is enclosed in its own square brackets. Note that there is an extra [ to contain all the elements which needs to be removed
-  matches_data[,output_column_name] <- str_count(matches_data[,column_name], "\\[")-1
+  matchesData[,outputColumnName] <- str_count(matchesData[,columnName], "\\[")-1
 }
 
-first_kill_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
-for(i in 1: length(first_kill_elements))
-{
-  column_name <- unlist(first_kill_elements[i])
+firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
+for(i in 1: length(firstKillElements)){
+  columnName <- unlist(firstKillElements[i])
   
   # Get the red and blue specific column names
-  red_column_name <- paste("r", column_name,sep="")
-  blue_column_name <- paste("b", column_name,sep="")
+  redColumnName <- paste("r", columnName,sep="")
+  blueColumnName <- paste("b", columnName,sep="")
   
   # Get the output column name to store the first destroyed time
-  red_output_column_name <- paste("r", column_name, "FirstDestroyedTime",sep="")
-  blue_output_column_name <- paste("b", column_name, "FirstDestroyedTime",sep="")
+  redOutputColumnName <- paste("r", columnName, "FirstDestroyedTime",sep="")
+  blueOutputColumnName <- paste("b", columnName, "FirstDestroyedTime",sep="")
   
   # Get the first number from the list of numbers
   
-  matches_data[,blue_output_column_name] <- unlist(lapply(as.character(matches_data[,blue_column_name]), getSmallestNumber))
+  matchesData[,blueOutputColumnName] <- unlist(lapply(as.character(matchesData[,blueColumnName]), getSmallestNumber))
   
-  matches_data[,red_output_column_name] <- unlist(lapply(as.character(matches_data[,red_column_name]), getSmallestNumber))
+  matchesData[,redOutputColumnName] <- unlist(lapply(as.character(matchesData[,redColumnName]), getSmallestNumber))
   
   # convert the first kill times to numeric for comparison
-  matches_data[,blue_output_column_name] <- as.numeric(matches_data[,blue_output_column_name])
-  matches_data[,red_output_column_name] <- as.numeric(matches_data[,red_output_column_name])
+  matchesData[,blueOutputColumnName] <- as.numeric(matchesData[,blueOutputColumnName])
+  matchesData[,redOutputColumnName] <- as.numeric(matchesData[,redOutputColumnName])
   
   # Get the name of the output column
-  first_kill_by_column_name <- paste(column_name, "FirstKillBy",sep="")
+  firstKillByColumnName <- paste(columnName, "FirstKillBy",sep="")
   
-  matches_data[,first_kill_by_column_name] <- as.numeric(matches_data[,blue_output_column_name] < matches_data[,red_output_column_name])
+  matchesData[,firstKillByColumnName] <- as.numeric(matchesData[,blueOutputColumnName] < matchesData[,redOutputColumnName])
 }
 
 ```
 ## Code to remove existing columns
 ```{r}
 # remove the gold diff column as it has redundant information
-matches_data$golddiff <- NULL
+matchesData$golddiff <- NULL
 
 # remove the rResults column as it too has redundant information
-matches_data$rResult <- NULL
+matchesData$rResult <- NULL
 
 if(shouldDiscardTimeSeriesColumnsFromProcessedFile){
   timeSeriesColumnNames <- c("goldblue", "bKills", "bTowers", "bInhibs", "bDragons", "bBarons", "bHeralds", "goldred", "rKills", "rTowers", "rInhibs", "rDragons", "rBarons", "rHeralds", "goldblueTop", "goldblueJungle", "goldblueMiddle", "goldblueADC", "goldblueSupport", "goldredTop", "goldredJungle", "goldredMiddle", "goldredADC", "goldredSupport")
   
-  for(i in 1:length(timeSeriesColumnNames))
-  {
-    column_name <- unlist(timeSeriesColumnNames[i])
-    matches_data[,column_name] <- NULL
+  for(i in 1:length(timeSeriesColumnNames)){
+    columnName <- unlist(timeSeriesColumnNames[i])
+    matchesData[,columnName] <- NULL
   }
-  
 }
 
 ```
 ## Insert code to do other processing of the matches data
 ```{r}
 ```
-## Write the current contents of the matches_data dataframe into a CSV in the current folder
+## Write the current contents of the matchesData dataframe into a CSV in the current folder
 ```{r}
-write.csv(matches_data, processedFileNameWithExtension, row.names = FALSE)
+write.csv(matchesData, processedFileNameWithExtension, row.names = FALSE)
 ```
