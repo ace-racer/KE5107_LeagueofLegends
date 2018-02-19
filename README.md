@@ -9,6 +9,10 @@ Repository to contain all the R scripts that we develop for the KE5107 course CA
 3. Processed Data Discovery.Rmd - Contains all scripts to do additional discovery on the processed data. Note that this should use the processed file as input.
 
 
+## R programming style guide
+
+1. This one (https://google.github.io/styleguide/Rguide.xml) from Google looks nice and we can try to follow this to have a standardized code base.
+
 ## Steps to get going
 
 1. Git clone the repository
