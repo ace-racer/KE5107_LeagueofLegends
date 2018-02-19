@@ -1,23 +1,8 @@
----
-title: "R Notebook"
-output:
-  html_document:
-    keep_md: true
----
 
-
-```{r}
-# Read Anurag's processed data, and create YearSeason variable (from Charles)
 rm(list=ls())
 matches = read.csv('C:\\Users\\pierl\\Dropbox\\Machine_Learning\\KE5107\\processed\\matches.csv')
 matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
 
-
-```
-
-**Get the team efficiency (matches won / total matches played)**
-
-```{r}
 library(data.table)
 library(ggplot2)
 # Total matches played by each team (consider them as blue or red)
@@ -50,16 +35,7 @@ combinedTeams[is.na(combinedTeams)] <- 0
 # Plotting top 20 just for visualization
 top20efficient <- (combinedTeams[with(combinedTeams, order(-combinedTeams$winEfficiency)), ])[1:20, ]
 ggplot(top20efficient, aes(x=Team, y=winEfficiency)) + geom_bar(stat="identity") +ggtitle("Top 20 Teams Most Efficient At Winning") + theme(plot.title = element_text(hjust = 0.5))
-```
 
-Personally, I don't feel this is an extremely accurate value as it could be that the team played 10 games and won them all. Eg SSW who played 17 games and won 15. Contrast that to SKT, who played many games, and naturally did not win them all. As such, I don't think it's necessary to group the win efficiency by season. 
-
-That said, it is good enough to be used as a predictor as SKT, the undisputed champion is among the top 10 in win efficiency. 
-
-Put this new derived value back into processed -> matches for both blueTeamTag and redTeamTag.
-
-```{r}
-# Helper Fns
 movetolast <- function(data, move) {
   data[c(setdiff(names(data), move), move)]
 }
@@ -79,14 +55,6 @@ head(matches)
 movetolast(matches, c("bWinEfficiency", "rWinEfficiency"))
 #write.csv(matches, file = "matches_processed.csv")
 
-
-```
-
-
-** Derive parameter to see whether team is having their most effective line-up **
-
-```{r}
-
 library(plyr)
 
 # add new columns to matches
@@ -94,7 +62,7 @@ matches$isBluePreferredLineup <- 0
 matches$isRedPreferredLineup <- 0
 
 for (row  in 1:nrow(combinedPlayed)) {
-  #print(combinedPlayed[row,])
+  print(combinedPlayed[row,])
   Team <- combinedPlayed[row, 1]
   if (is.na(Team)) next 
   
@@ -120,6 +88,3 @@ for (row  in 1:nrow(combinedPlayed)) {
   matches$isBluePreferredLineup <- ifelse((matches$blueTop==btop & matches$blueADC==badc & matches$blueJungle==bjungle & matches$blueSupport==bsupport & matches$blueMiddle==bmiddle), 1, matches$isBluePreferredLineup)
   matches$isRedPreferredLineup <- ifelse((matches$redTop==rtop & matches$redADC==radc & matches$redJungle==rjungle & matches$redSupport==rsupport & matches$redMiddle==rmiddle), 1, matches$isRedPreferredLineup)
 }
-
-```
-
