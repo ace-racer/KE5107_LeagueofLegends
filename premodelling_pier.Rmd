@@ -86,7 +86,7 @@ movetolast(matches, c("bWinEfficiency", "rWinEfficiency"))
 ```
 
 
-** Derive parameter to see whether team is having their most effective line-up of players/champions **
+**Derive parameter to see whether team is having their most effective line-up of players/champions**
 
 ```{r echo=FALSE}
 
