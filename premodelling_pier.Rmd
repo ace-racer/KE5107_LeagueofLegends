@@ -10,7 +10,8 @@ output:
 ```{r}
 # Read Anurag's processed data, and create YearSeason variable (from Charles)
 rm(list=ls())
-matches = read.csv('C:\\Users\\pierl\\Dropbox\\Machine_Learning\\KE5107\\processed\\matches.csv')
+#matches = read.csv('C:\\Users\\pierl\\Dropbox\\Machine_Learning\\KE5107\\processed\\matches.csv')
+matches = read.csv('/Users/pierlim/Dropbox/Machine_Learning/KE5107/processed/matches.csv')
 matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
 
 
@@ -59,7 +60,7 @@ That said, it is good enough to be used as a predictor as SKT, the undisputed ch
 
 Put this new derived value back into processed -> matches for both blueTeamTag and redTeamTag.
 
-```{r}
+```{r echo=FALSE}
 # Helper Fns
 movetolast <- function(data, move) {
   data[c(setdiff(names(data), move), move)]
@@ -86,7 +87,7 @@ movetolast(matches, c("bWinEfficiency", "rWinEfficiency"))
 
 ** Derive parameter to see whether team is having their most effective line-up of players/champions **
 
-```{r}
+```{r echo=FALSE}
 
 library(plyr)
 
