@@ -63,7 +63,7 @@ redKillsColumns <- lapply(gameElements, prependRed)
 # Combine the Kills columns
 allKillsColumns <- c(blueKillsColumns, redKillsColumns)
 
-for(i in 1:length(allKillsColumns)) {
+for (i in 1:length(allKillsColumns)) {
   columnName <- unlist(allKillsColumns[i])
   outputColumnName <- paste(columnName, "Num", sep="")
   
@@ -72,7 +72,7 @@ for(i in 1:length(allKillsColumns)) {
 }
 
 firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
-for(i in 1: length(firstKillElements)){
+for (i in 1: length(firstKillElements)) {
   columnName <- unlist(firstKillElements[i])
   
   # Get the red and blue specific column names
@@ -100,7 +100,12 @@ for(i in 1: length(firstKillElements)){
 }
 
 ```
-## Code to remove existing columns
+
+## Insert code to do other processing of the matches data
+```{r}
+```
+
+## Code to remove existing columns from the processed file that will be used for creating models
 ```{r}
 # remove the gold diff column as it has redundant information
 matchesData$golddiff <- NULL
@@ -108,19 +113,18 @@ matchesData$golddiff <- NULL
 # remove the rResults column as it too has redundant information
 matchesData$rResult <- NULL
 
-if(shouldDiscardTimeSeriesColumnsFromProcessedFile){
+if (shouldDiscardTimeSeriesColumnsFromProcessedFile) {
   timeSeriesColumnNames <- c("goldblue", "bKills", "bTowers", "bInhibs", "bDragons", "bBarons", "bHeralds", "goldred", "rKills", "rTowers", "rInhibs", "rDragons", "rBarons", "rHeralds", "goldblueTop", "goldblueJungle", "goldblueMiddle", "goldblueADC", "goldblueSupport", "goldredTop", "goldredJungle", "goldredMiddle", "goldredADC", "goldredSupport")
   
-  for(i in 1:length(timeSeriesColumnNames)){
+  for (i in 1:length(timeSeriesColumnNames)) {
     columnName <- unlist(timeSeriesColumnNames[i])
     matchesData[,columnName] <- NULL
   }
 }
 
 ```
-## Insert code to do other processing of the matches data
-```{r}
-```
+
+
 ## Write the current contents of the matchesData dataframe into a CSV in the current folder
 ```{r}
 write.csv(matchesData, processedFileNameWithExtension, row.names = FALSE)
