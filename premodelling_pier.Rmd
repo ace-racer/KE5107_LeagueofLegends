@@ -5,22 +5,17 @@ output:
     keep_md: true
 ---
 
-Helper Functions
-```{r}
-
-```
-
 
 ```{r}
 # Read Anurag's processed data, and create YearSeason variable (from Charles)
 rm(list=ls())
-matches = read.csv('/Users/pierlim/R_Projects/processed/matches.csv')
+matches = read.csv('C:\\Users\\pierl\\Dropbox\\Machine_Learning\\KE5107\\processed\\matches.csv')
 matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
 
 
 ```
 
-Get the team efficiency (matches won / total matches played)
+**Get the team efficiency (matches won / total matches played)**
 
 ```{r}
 library(data.table)
@@ -64,6 +59,11 @@ That said, it is good enough to be used as a predictor as SKT, the undisputed ch
 Put this new derived value back into processed -> matches for both blueTeamTag and redTeamTag.
 
 ```{r}
+# Helper Fns
+movetolast <- function(data, move) {
+  data[c(setdiff(names(data), move), move)]
+}
+
 combinedTeams_blue = combinedTeams[,-c(2:7)] # remove unecessary columns
 setnames(combinedTeams_blue, "winEfficiency", "bWinEfficiency")
 setnames(combinedTeams_blue, "Team", "blueTeamTag")
@@ -74,15 +74,63 @@ setnames(combinedTeams_red, "winEfficiency", "rWinEfficiency")
 setnames(combinedTeams_red, "Team", "redTeamTag")
 matches <- merge(combinedTeams_red, matches, by="redTeamTag")
 
-movetolast <- function(data, move) {
-  data[c(setdiff(names(data), move), move)]
-}
-
-movetolast(matches, c("bWinEfficiency", "rWinEfficiency"))
 matches <- (matches[with(matches, order(matches$League)), ])
 head(matches)
+movetolast(matches, c("bWinEfficiency", "rWinEfficiency"))
 #write.csv(matches, file = "matches_processed.csv")
 
+
+```
+
+
+** Derive parameter to see whether team is having their most effective line-up **
+
+```{r}
+
+library(plyr)
+
+blue_skt_wins <- subset(bluewin, bluewin$blueTeamTag=="SKT")
+red_skt_wins <- subset(redwin, redwin$redTeamTag=="SKT")
+
+# Function to combine positions for blue skt and red skt wins
+plotTopPlayersForPositionCombined <- function(dataset1, col_name1, dataset2, col_name2, titleStr){
+  t1 <- table(dataset1[[col_name1]])
+  t1_sorted = sort(t1, decreasing=TRUE)[1:10]
+  t1_sorted_df = data.frame(t1_sorted)
+  t2 <- table(dataset2[[col_name2]])
+  t2_sorted = sort(t2, decreasing=TRUE)[1:10]
+  t2_sorted_df = data.frame(t2_sorted)
+  names(t2_sorted_df)[names(t2_sorted_df) == 'Freq'] <- 'Freq2'
+  new_df <- merge(t1_sorted_df, t2_sorted_df, all.x=TRUE)
+  new_df <- ddply(new_df, .(Var1, Freq, Freq2), summarise, Total=sum(Freq, Freq2))
+  names(new_df)[names(new_df) == 'Var1'] <- 'Player'
+  ggplot(new_df, aes(x=Player,y=Total)) +geom_histogram(stat = "identity")+ggtitle(titleStr) + theme(plot.title = element_text(hjust = 0.5))
+}
+
+# omg this is difficult
+for (Team in combinedPlayed) {
+  # Get all instances of when this team wins (blue/red)
+  blueWins <- subset(matches, (matches$blueTeamTag==Team & matches$bResult==1))
+  redWins <- subset(matches, (matches$redTeamTag==Team & matches$rResult==1))
+  
+  # In all the blueWins for this team, get the most popular player for each pos
+  btop <- names (sort(table(blueWins$blueTop), decreasing=TRUE)[1] )
+  badc <- names (sort(table(blueWins$blueADC), decreasing=TRUE)[1] )
+  bjungle <- names (sort(table(blueWins$blueJungle), decreasing=TRUE)[1])
+  bsupport <- names (sort(table(blueWins$blueSupport), decreasing=TRUE)[1])
+  bmiddle <- names (sort(table(blueWins$blueMiddle), decreasing=TRUE)[1])
+  
+    # In all the redWins for this team, get the most popular player for each pos
+  rtop <- names (sort(table(redWins$redTop), decreasing=TRUE)[1] )
+  radc <- names (sort(table(redWins$redADC), decreasing=TRUE)[1] )
+  rjungle <- names (sort(table(redWins$redJungle), decreasing=TRUE)[1])
+  rsupport <- names (sort(table(redWins$redSupport), decreasing=TRUE)[1])
+  rmiddle <- names (sort(table(redWins$redMiddle), decreasing=TRUE)[1])
+  
+  # Mark all those matches that fit this particular combi for this team as having the preferred line-up
+  
+  
+}
 
 ```
 
