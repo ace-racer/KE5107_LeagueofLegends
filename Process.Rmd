@@ -3,6 +3,11 @@ title: "Process the league of legends dataset"
 output: html_notebook
 ---
 
+## Global configuration variables
+```{r}
+ shouldDiscardTimeSeriesColumnsFromProcessedFile <- TRUE
+ processedFileNameWithExtension <- "processed_matches.csv"
+```
 
 ## Process the current data and get:
 
@@ -97,10 +102,30 @@ for(i in 1: length(first_kill_elements))
 }
 
 ```
+## Code to remove existing columns
+```{r}
+# remove the gold diff column as it has redundant information
+matches_data$golddiff <- NULL
+
+# remove the rResults column as it too has redundant information
+matches_data$rResult <- NULL
+
+if(shouldDiscardTimeSeriesColumnsFromProcessedFile){
+  timeSeriesColumnNames <- c("goldblue", "bKills", "bTowers", "bInhibs", "bDragons", "bBarons", "bHeralds", "goldred", "rKills", "rTowers", "rInhibs", "rDragons", "rBarons", "rHeralds", "goldblueTop", "goldblueJungle", "goldblueMiddle", "goldblueADC", "goldblueSupport", "goldredTop", "goldredJungle", "goldredMiddle", "goldredADC", "goldredSupport")
+  
+  for(i in 1:length(timeSeriesColumnNames))
+  {
+    column_name <- unlist(timeSeriesColumnNames[i])
+    matches_data[,column_name] <- NULL
+  }
+  
+}
+
+```
 ## Insert code to do other processing of the matches data
 ```{r}
 ```
 ## Write the current contents of the matches_data dataframe into a CSV in the current folder
 ```{r}
-write.csv(matches_data, "processed_matches.csv", row.names = FALSE)
+write.csv(matches_data, processedFileNameWithExtension, row.names = FALSE)
 ```
