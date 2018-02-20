@@ -101,6 +101,98 @@ for (i in 1: length(firstKillElements)) {
 
 ```
 
+## Insert code to do other processing of the matches data
+## Vaibhav - first blood and gold diff
+
+```{r}
+
+#Supress the Warnings
+options(warn=-1)
+matches <- matchesData[which(matchesData$bKills != "[]" & matchesData$rKills != "[]" )  ,]
+
+#We will try to fetch the first blood timings for team blue and team red
+bKills_data = gsub("\\[|\\]", "", matches$bKills)
+bkills_sep = do.call("rbind", strsplit(bKills_data, ",")) # remove the , 
+bfirstblood_time = data.frame(apply(bkills_sep, 2, as.numeric)) # convert str to num
+bfirstblood_timings <- bfirstblood_time$X1
+
+rKills_data = gsub("\\[|\\]", "", matches$rKills)
+rkills_sep = do.call("rbind", strsplit(rKills_data, ",")) # remove the , 
+rfirstblood_time = data.frame(apply(rkills_sep, 2, as.numeric)) # convert str to num
+rfirstblood_timings <- rfirstblood_time$X1
+
+#Now we will compare the timings for both of them and make a new column called "FirstBlood",If Blue team takes first blood then Column value will be 1 or else 0
+x <- ifelse((bfirstblood_timings<rfirstblood_timings) , 1,0)
+matches$FirstBlood <- x
+
+#We will create the different dataframe to store empty bKills and rKills
+matches1 <- matchesData[which(matchesData$bKills == "[]" | matchesData$rKills == "[]")  ,]
+y <-ifelse(matches1$rKills == "[]",1,0)
+matches1$FirstBlood <- y
+
+#We will merge the dataframes now.
+matches_total <- rbind(matches,matches1)
+
+#Blue tem stats
+matches_tot_bwins <- nrow(matches_total[which(matches_total$bResult == "1")  ,])
+#matches_tot_bwins  
+#3845
+matches_bfirstblood <- nrow(matches_total[which(matches_total$bResult == "1"  & matches_total$FirstBlood == "1" )  ,])
+#matches_bfirstblood
+#2388
+win_bratio <- matches_bfirstblood/matches_tot_bwins
+win_bratio
+#0.621066319895969
+
+#Red Team Stats
+matches_tot_rwins <- nrow(matches_total[which(matches_total$rResult == "1")  ,])
+#matches_tot_rwins  
+#3213
+matches_rfirstblood <- nrow(matches_total[which(matches_total$rResult == "1"  & matches_total$FirstBlood == "0" )  ,])
+#matches_rfirstblood
+#1977
+win_rratio <- matches_rfirstblood/matches_tot_rwins
+win_rratio
+#0.61531279178338
+
+#Now we will fetch out the Gold at 5,10 and 20 minutes of the time.Negative Gold Difference means Red Team is leading while positive Gold DIfferencde means Blue team is leading
+golddiff_data = gsub("\\[|\\]", "", matchesData$golddiff)
+golddiff_data = do.call("rbind", strsplit(golddiff_data, ",")) # remove the , 
+golddiff_times = data.frame(apply(golddiff_data, 2, as.numeric)) # convert str to num
+#golddiff_times
+matches_total$golddiff_5mins <- golddiff_times$X5
+#matches_total$golddiff_5mins
+matches_total$golddiff_10mins <- golddiff_times$X10
+#matches_total$golddiff_10mins
+matches_total$golddiff_20mins <- golddiff_times$X20
+#matches_total$golddiff_20mins
+
+#Now we will fetch out the Gold Difference and Winning Combinations
+#The ratio of Red Team Gold difference for which they were leading for first 20 mins
+result_20mins <-matches_total[which((strtoi(matches_total$golddiff_20mins, base = 0L))<0 & matches_total$bResult == '0'),]
+rratio_20mins <-nrow(result_20mins)/matches_tot_rwins
+#rratio_20mins
+#0.447245564892624
+
+#The ratio of Blue Team Gold difference for which they were leading for first 20 mins
+result_20mins <-matches_total[which((strtoi(matches_total$golddiff_20mins, base = 0L))<0 & matches_total$bResult == '1'),]
+bratio_20mins <-nrow(result_20mins)/matches_tot_bwins
+#bratio_20mins
+#0.466579973992198
+
+#The ratio of Red Team Gold difference for which they were leading for first 10 mins
+result_10mins <-matches_total[which((strtoi(matches_total$golddiff_10mins, base = 0L))<0 & matches_total$bResult == '0'),]
+rratio_10mins <-nrow(result_10mins)/matches_tot_rwins
+#rratio_10mins
+#0.48708372237784
+
+#The ratio of Blue Team Gold difference for which they were leading for first 10 mins
+result_10mins <-matches_total[which((strtoi(matches_total$golddiff_10mins, base = 0L))<0 & matches_total$bResult == '1'),]
+bratio_10mins <-nrow(result_10mins)/matches_tot_bwins
+#bratio_10mins
+#0.4777633289987
+```
+
 ## Code to get effectiveness of teams (Wins / Total Matches Played by Team)
 ## - rWinEfficiency : how efficient red is at winning matches
 ## - bWinEfficiency : how efficient blue is at winning matches
