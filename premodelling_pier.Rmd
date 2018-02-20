@@ -36,7 +36,7 @@ combinedPlayed$totalPlayed <- combinedPlayed$bMatchesPlayed + combinedPlayed$rMa
 
 # Get each team wins, whether they won as blue or red
 bluewin <- subset(matches, matches$bResult==1)
-redwin <- subset(matches, matches$rResult==1)
+redwin <- subset(matches, matches$bResult==0)
 blueTeamWin = data.frame(table(bluewin$blueTeamTag))
 redTeamWin = data.frame(table(redwin$redTeamTag))
 names(blueTeamWin)[names(blueTeamWin) == 'Var1'] <- 'Team'
@@ -123,7 +123,7 @@ for (season_num in 1:nrow(seasons)) {
     
     # Get all instances of when this team wins for this season (blue/red)
     blueWins <- matches[which(matches$blueTeamTag==Team & matches$bResult==1 & matches$YearSeason==Season),]
-    redWins <- matches[which(matches$redTeamTag==Team & matches$rResult==1 & matches$YearSeason==Season),]
+    redWins <- matches[which(matches$redTeamTag==Team & matches$bResult==0 & matches$YearSeason==Season),]
     
     # In all the blueWins for this team, get the most popular player for each pos for THIS SEASON
     blue_poplist <- getTopData(blueWins, "blueTop", "blueADC", "blueJungle", "blueSupport", "blueMiddle")
