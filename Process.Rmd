@@ -194,8 +194,8 @@ bratio_10mins <-nrow(result_10mins)/matches_tot_bwins
 ```
 
 ## Code to get effectiveness of teams (Wins / Total Matches Played by Team)
-## - rWinEfficiency : how efficient red is at winning matches
-## - bWinEfficiency : how efficient blue is at winning matches
+- rWinEfficiency : how efficient red is at winning matches
+- bWinEfficiency : how efficient blue is at winning matches
 ```{r}
 # Charles's snippet to get YearSeason variable for easier seasonal handling
 matchesData$YearSeason <- ifelse(matchesData$Season == "Spring", paste("01/01/", as.character(matchesData$Year), sep=""), paste("01/06/", as.character(matchesData$Year), sep=""))
@@ -251,10 +251,10 @@ movetolast(matchesData, c("bWinEfficiency", "rWinEfficiency"))
 ```
 
 ## Code to get preferred winning player and champions lineup, with respect to player positions. 
-##- isBluePreferredLineup : is the current config of players blue's preferred winning formation (for the season)?
-##- isRedPreferredLineup : same, but for red
-##- isBluePreferredChamp : is the current config of champions blue's preferred winning champions formation (for the season)?
-##- isRedPreferredChamp: same, but for red
+- isBluePreferredLineup : is the current config of players blue's preferred winning formation (for the season)?
+- isRedPreferredLineup : same, but for red
+- isBluePreferredChamp : is the current config of champions blue's preferred winning champions formation (for the season)?
+- isRedPreferredChamp: same, but for red
 
 ```{r}
 library(plyr)
