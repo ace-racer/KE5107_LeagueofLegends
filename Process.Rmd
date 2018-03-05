@@ -342,6 +342,135 @@ for (season_num in 1:nrow(seasons)) {
 
 ```
 
+```{r "0.3 Functions"}
+
+# 0.3.1 cuberoot
+cuberoot_trans = function() trans_new('cuberoot', 
+                                      transform = function(x) x^(1/3), 
+                                      inverse = function(x) X^3)
+
+# 0.3.2 Define new column names: takes in the max number for column and a name, outputs multiple columns
+# Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
+create_column_names <- function(columns, namestring){
+  maxnr <- max(matches$columns)
+  vectofnr = c();
+  for (i in 1:columns){
+    # print(i)
+    vectofnr[i] <- paste(namestring, as.character(i), sep="_")
+    # print(vectofnr)
+  }
+  return(vectofnr)
+}
+
+ 
+# because it is so slow, maybe you can also put it in a global var:
+# listofcolumns <- create_column_names(gamelength, 'gold')
+
+# 0.3.3 remove the first and last char
+remove_first_last <- function(inputstring){
+  return(substring(inputstring, 2, str_length(inputstring)-1))
+}
+
+```
+
+```{r "0.4 Data Wrangling"}
+
+# 0.4.1 viewing & correcting types
+str(matches)
+# Types seem ok, but have to correct the adjusted variables.
+
+## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
+matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+
+## 0.4.3 get rid of [ & ] for later use --> only use once!
+matches$goldblue <- remove_first_last(matches$goldblue)
+matches$golddiff <- remove_first_last(matches$golddiff)
+matches$goldred <- remove_first_last(matches$goldred)
+matches$blueBans <- remove_first_last(matches$blueBans)
+matches$redBans <- remove_first_last(matches$redBans)
+
+
+## 0.4.4 Square the data if scewed 
+
+# to do
+
+```
+
+```{r "0.5 New variables"}
+# make a better match variable for easy reading.
+matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+
+# make a better time variable out of year and season
+matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
+
+str(matches$YearSeason)
+summary(matches$Season)
+
+
+matches$YearSeason <- as.Date(matches$YearSeason, format = "%d/%m/%Y")
+
+summary(matches$YearSeason)
+```
+
+```{r "0.6 Making subsets"}
+# It gets messy very easily so extra dataset instead of extra variable:
+matches_seperated <- matches %>%
+  separate(as.numeric(golddiff), into = c(create_column_names(max(matches$gamelength), "gold_diff_in_minute")), sep = "\\,")
+
+bans_seperated <- matches %>%    
+  separate(blueBans, into = c(create_column_names(5, "bansblue")), sep = "\\,")%>% 
+  separate(redBans, into = c(create_column_names(5, "bansred")), sep = "\\,")
+
+# Make them numeric
+matches_seperated <- japply(matches_seperated, c(create_column_names(max(matches$gamelength), "gold_diff_in_minute")), as.numeric )
+# Hooray it works:
+str(matches_seperated$gold_diff_in_minute_80)
+
+# Make them categorical --> somehow he doesn't want to do this when with surrounded with ', so do seperately
+# bans_seperated <- japply(bans_seperated, c(create_column_names(5, "bansblue")), as.factor)
+# bans_seperated <- japply(bans_seperated, c("bansblue_2", "bansblue_3"), as.factor)
+
+# get rid of the annoying space
+bans_seperated$bansblue_2 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_3 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_4 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_5 <- substr(bans_seperated$bansblue_2, 2, 100)
+
+# make a factor out of everything
+bans_seperated$bansblue_1 <- as.factor(bans_seperated$bansblue_1)
+bans_seperated$bansblue_2 <- as.factor(bans_seperated$bansblue_2)
+bans_seperated$bansblue_3 <- as.factor(bans_seperated$bansblue_3)
+bans_seperated$bansblue_4 <- as.factor(bans_seperated$bansblue_4)
+bans_seperated$bansblue_5 <- as.factor(bans_seperated$bansblue_5)
+
+summary(bans_seperated$bansblue_1)
+
+bans_seperated$bansred_2 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_3 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_4 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_5 <- substr(bans_seperated$bansred_2, 2, 100)
+
+bans_seperated$bansred_1 <- as.factor(bans_seperated$bansred_1)
+bans_seperated$bansred_2 <- as.factor(bans_seperated$bansred_2)
+bans_seperated$bansred_3 <- as.factor(bans_seperated$bansred_3)
+bans_seperated$bansred_4 <- as.factor(bans_seperated$bansred_4)
+bans_seperated$bansred_5 <- as.factor(bans_seperated$bansred_5)
+
+summary(bans_seperated$bansred_1)
+
+# it would be cool if the first bans & pick get a higher weight than the second bans for the popularity score
+# so first ban *5 + second ban *4 .. and so on (for both red and blue and pick and ban)
+
+# then just the score * the picks for each team and we got ourselves a perfect predictor (I hope)
+
+matches$golddiff <- NULL
+matches_seperated$golddiff <- NULL
+
+# may be interesting to make a red vs blue won dataset.
+
+blueset <- subset(matches, winner == 'blue')
+redset <- subset(matches, winner == 'red')
+```
 
 
 ## Code to remove existing columns from the processed file that will be used for creating models
