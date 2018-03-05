@@ -9,7 +9,6 @@ Load the data from the processed file
 library(corrplot)
 
 setwd('C:/Users/User/Documents/KE5107_LeagueofLegends')
-# matches <- read.csv("matches.csv", header=TRUE, sep=",")
 matches = read.csv("processed_matches.csv")
 game_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
@@ -62,10 +61,9 @@ those on the first line.
 
 ```{r "explore the correlations"}
 
-
-
-
-
+# I have made a more detailed golddiff, but I understand that this may cause confusion in the csv. So I will just use them here.
+setwd('C:/Users/User/Documents/KE5107_LeagueofLegends')
+matches_seperated <- read.csv("golddifferences.csv")
 
 matches_seperated$gold_diff_in_minute_1 <- as.numeric(matches_seperated$gold_diff_in_minute_1)
 
