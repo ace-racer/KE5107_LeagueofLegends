@@ -19,8 +19,8 @@ output: html_notebook
 ```{r}
 library(stringr)
 
-setwd("H:\\KE 5107 Projects\\code\\KE5107_LeagueofLegends")
-matchesData = read.csv("data/matches.csv")
+setwd('C:/Users/User/Dropbox/NUS/Data mining/leagueoflegends')
+matchesData = read.csv("matches.csv", header=TRUE, sep=",")
 gameElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
 # Prepends r to the item
@@ -200,6 +200,8 @@ bratio_10mins <-nrow(result_10mins)/matches_tot_bwins
 # Charles's snippet to get YearSeason variable for easier seasonal handling
 matchesData$YearSeason <- ifelse(matchesData$Season == "Spring", paste("01/01/", as.character(matchesData$Year), sep=""), paste("01/06/", as.character(matchesData$Year), sep=""))
 
+# install.packages("data.table")
+
 library(data.table)
 
 # Total matches played by each team (consider them as blue or red)
@@ -352,7 +354,7 @@ cuberoot_trans = function() trans_new('cuberoot',
 # 0.3.2 Define new column names: takes in the max number for column and a name, outputs multiple columns
 # Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
 create_column_names <- function(columns, namestring){
-  maxnr <- max(matches$columns)
+  maxnr <- max(matchesData$columns)
   vectofnr = c();
   for (i in 1:columns){
     # print(i)
@@ -376,18 +378,18 @@ remove_first_last <- function(inputstring){
 ```{r "0.4 Data Wrangling"}
 
 # 0.4.1 viewing & correcting types
-str(matches)
+str(matchesData)
 # Types seem ok, but have to correct the adjusted variables.
 
 ## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
-matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+matchesData$winner <- ifelse(matchesData$bResult > 0, c("blue"), c("red"))
 
 ## 0.4.3 get rid of [ & ] for later use --> only use once!
-matches$goldblue <- remove_first_last(matches$goldblue)
-matches$golddiff <- remove_first_last(matches$golddiff)
-matches$goldred <- remove_first_last(matches$goldred)
-matches$blueBans <- remove_first_last(matches$blueBans)
-matches$redBans <- remove_first_last(matches$redBans)
+matchesData$goldblue <- remove_first_last(matchesData$goldblue)
+matchesData$golddiff <- remove_first_last(matchesData$golddiff)
+matchesData$goldred <- remove_first_last(matchesData$goldred)
+matchesData$blueBans <- remove_first_last(matchesData$blueBans)
+matchesData$redBans <- remove_first_last(matchesData$redBans)
 
 
 ## 0.4.4 Square the data if scewed 
@@ -398,33 +400,33 @@ matches$redBans <- remove_first_last(matches$redBans)
 
 ```{r "0.5 New variables"}
 # make a better match variable for easy reading.
-matches$winner <- ifelse(matches$bResult > 0, c("blue"), c("red"))
+matchesData$winner <- ifelse(matchesData$bResult > 0, c("blue"), c("red"))
 
 # make a better time variable out of year and season
-matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
+matchesData$YearSeason <- ifelse(matchesData$Season == "Spring", paste("01/01/", as.character(matchesData$Year), sep=""), paste("01/06/", as.character(matchesData$Year), sep=""))
 
-str(matches$YearSeason)
-summary(matches$Season)
+str(matchesData$YearSeason)
+summary(matchesData$Season)
 
 
-matches$YearSeason <- as.Date(matches$YearSeason, format = "%d/%m/%Y")
+matchesData$YearSeason <- as.Date(matchesData$YearSeason, format = "%d/%m/%Y")
 
-summary(matches$YearSeason)
+summary(matchesData$YearSeason)
 ```
 
 ```{r "0.6 Making subsets"}
 # It gets messy very easily so extra dataset instead of extra variable:
-matches_seperated <- matches %>%
-  separate(as.numeric(golddiff), into = c(create_column_names(max(matches$gamelength), "gold_diff_in_minute")), sep = "\\,")
+matchesData_seperated <- matchesData %>%
+  separate(as.numeric(golddiff), into = c(create_column_names(max(matchesData$gamelength), "gold_diff_in_minute")), sep = "\\,")
 
-bans_seperated <- matches %>%    
+bans_seperated <- matchesData %>%    
   separate(blueBans, into = c(create_column_names(5, "bansblue")), sep = "\\,")%>% 
   separate(redBans, into = c(create_column_names(5, "bansred")), sep = "\\,")
 
 # Make them numeric
-matches_seperated <- japply(matches_seperated, c(create_column_names(max(matches$gamelength), "gold_diff_in_minute")), as.numeric )
+matchesData_seperated <- japply(matchesData_seperated, c(create_column_names(max(matchesData$gamelength), "gold_diff_in_minute")), as.numeric )
 # Hooray it works:
-str(matches_seperated$gold_diff_in_minute_80)
+str(matchesData_seperated$gold_diff_in_minute_80)
 
 # Make them categorical --> somehow he doesn't want to do this when with surrounded with ', so do seperately
 # bans_seperated <- japply(bans_seperated, c(create_column_names(5, "bansblue")), as.factor)
@@ -463,13 +465,13 @@ summary(bans_seperated$bansred_1)
 
 # then just the score * the picks for each team and we got ourselves a perfect predictor (I hope)
 
-matches$golddiff <- NULL
-matches_seperated$golddiff <- NULL
+matchesData$golddiff <- NULL
+matchesData_seperated$golddiff <- NULL
 
 # may be interesting to make a red vs blue won dataset.
 
-blueset <- subset(matches, winner == 'blue')
-redset <- subset(matches, winner == 'red')
+blueset <- subset(matchesData, winner == 'blue')
+redset <- subset(matchesData, winner == 'red')
 ```
 
 
