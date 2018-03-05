@@ -403,12 +403,13 @@ str(matches_seperated$gold_diff_in_minute_80)
 # bans_seperated <- japply(bans_seperated, c(create_column_names(5, "bansblue")), as.factor)
 # bans_seperated <- japply(bans_seperated, c("bansblue_2", "bansblue_3"), as.factor)
 
-# get rid of space
+# get rid of the annoying space
 bans_seperated$bansblue_2 <- substr(bans_seperated$bansblue_2, 2, 100)
 bans_seperated$bansblue_3 <- substr(bans_seperated$bansblue_2, 2, 100)
 bans_seperated$bansblue_4 <- substr(bans_seperated$bansblue_2, 2, 100)
 bans_seperated$bansblue_5 <- substr(bans_seperated$bansblue_2, 2, 100)
 
+# make a factor out of everything
 bans_seperated$bansblue_1 <- as.factor(bans_seperated$bansblue_1)
 bans_seperated$bansblue_2 <- as.factor(bans_seperated$bansblue_2)
 bans_seperated$bansblue_3 <- as.factor(bans_seperated$bansblue_3)
