@@ -30,7 +30,7 @@ Are each team always fields same set of players of each match? Let's find it out
 
 We try to find it out by checking TSM members who play in each match.
 
-```{r}
+```{r "0.3 Data Summary"}
 matches$tsmTop <- ifelse(matches$blueTeamTag == "TSM", as.character(matches$blueTop), ifelse(matches$redTeamTag == "TSM", as.character(matches$redTop), ""))
 matches$tsmJungle <- ifelse(matches$blueTeamTag == "TSM", as.character(matches$blueJungle), ifelse(matches$redTeamTag == "TSM", as.character(matches$redJungle), ""))
 matches$tsmMiddle <- ifelse(matches$blueTeamTag == "TSM", as.character(matches$blueMiddle), ifelse(matches$redTeamTag == "TSM", as.character(matches$redMiddle), ""))
@@ -40,7 +40,14 @@ matches$tsmTag <- ifelse(matches$blueTeamTag == "TSM", "TSM", ifelse(matches$red
 
 tsmMatches <- matches[matches$tsmTag == "TSM", ]
 
-write.csv(tsmMatches, "data/matches_tsm.csv")
+write.csv(tsmMatches, "data/output/matches_tsm_team.csv")
 ```
 
 
+```{r "0.4 Output Result"}
+
+matches_tsm_team = read.csv("data/output/matches_tsm_team.csv")
+
+# 0.1.1 viewing & correcting types
+str(matches_tsm_team)
+```

@@ -19,7 +19,6 @@ output: html_notebook
 ```{r}
 library(stringr)
 
-setwd("H:\\KE 5107 Projects\\code\\KE5107_LeagueofLegends")
 matchesData = read.csv("data/matches.csv")
 gameElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
