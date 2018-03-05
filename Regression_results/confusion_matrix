@@ -1,0 +1,248 @@
+******************************** Training Set *********************************************
+
+Error matrix for the Decision Tree model on matches_processed.csv [**train**] (counts):
+
+      Predicted
+Actual    0    1 Error
+     0 1415  844  37.4
+     1  563 2118  21.0
+
+Error matrix for the Decision Tree model on matches_processed.csv [**train**] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 28.6 17.1  37.4
+     1 11.4 42.9  21.0
+
+Overall error: 28.5%, Averaged class error: 29.2%
+
+Rattle timestamp: 2018-03-05 22:44:50 pierl
+======================================================================
+Error matrix for the Extreme Boost model on matches_processed.csv [**train**] (counts):
+
+      Predicted
+Actual    0    1 Error
+     0 1567  679  30.2
+     1  481 2187  18.0
+
+Error matrix for the Extreme Boost model on matches_processed.csv [**train**] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 31.9 13.8  30.2
+     1  9.8 44.5  18.0
+
+Overall error: 23.6%, Averaged class error: 24.1%
+
+Rattle timestamp: 2018-03-05 22:44:50 pierl
+======================================================================
+Error matrix for the SVM model on matches_processed.csv [**train**] (counts):
+
+      Predicted
+Actual    0    1 Error
+     0 1481  765  34.1
+     1  479 2189  18.0
+
+Error matrix for the SVM model on matches_processed.csv [**train**] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 30.1 15.6  34.1
+     1  9.7 44.5  18.0
+
+Overall error: 25.4%, Averaged class error: 26.05%
+
+Rattle timestamp: 2018-03-05 22:44:53 pierl
+======================================================================
+Error matrix for the Linear model on matches_processed.csv [**train**] (counts):
+
+      Predicted
+Actual    0    1 Error
+     0 1521  725  32.3
+     1  600 2068  22.5
+
+Error matrix for the Linear model on matches_processed.csv [**train**] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 31.0 14.8  32.3
+     1 12.2 42.1  22.5
+
+Overall error: 26.9%, Averaged class error: 27.4%
+
+Rattle timestamp: 2018-03-05 22:44:53 pierl
+======================================================================
+Error matrix for the Neural Net model on matches_processed.csv [**train**] (counts):
+
+      Predicted
+Actual    0    1 Error
+     0 2023  223   9.9
+     1  199 2469   7.5
+
+Error matrix for the Neural Net model on matches_processed.csv [**train**] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 41.2  4.5   9.9
+     1  4.0 50.2   7.5
+
+Overall error: 8.6%, Averaged class error: 8.7%
+
+Rattle timestamp: 2018-03-05 22:44:53 pierl
+======================================================================
+
+
+********************** Validation  Set ********************************
+
+
+
+Error matrix for the Decision Tree model on matches_processed.csv [validate] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 259 212  45.0
+     1 177 410  30.2
+
+Error matrix for the Decision Tree model on matches_processed.csv [validate] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 24.5 20.0  45.0
+     1 16.7 38.8  30.2
+
+Overall error: 36.7%, Averaged class error: 37.6%
+
+Rattle timestamp: 2018-03-05 22:41:02 pierl
+======================================================================
+Error matrix for the Extreme Boost model on matches_processed.csv [validate] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 286 181  38.8
+     1 163 423  27.8
+
+Error matrix for the Extreme Boost model on matches_processed.csv [validate] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 27.2 17.2  38.8
+     1 15.5 40.2  27.8
+
+Overall error: 32.6%, Averaged class error: 33.3%
+
+Rattle timestamp: 2018-03-05 22:41:03 pierl
+======================================================================
+Error matrix for the SVM model on matches_processed.csv [validate] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 278 189  40.5
+     1 132 454  22.5
+
+Error matrix for the SVM model on matches_processed.csv [validate] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 26.4 17.9  40.5
+     1 12.5 43.1  22.5
+
+Overall error: 30.5%, Averaged class error: 31.5%
+
+Rattle timestamp: 2018-03-05 22:41:03 pierl
+======================================================================
+Error matrix for the Neural Net model on matches_processed.csv [validate] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 291 176  37.7
+     1 208 378  35.5
+
+Error matrix for the Neural Net model on matches_processed.csv [validate] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 27.6 16.7  37.7
+     1 19.8 35.9  35.5
+
+Overall error: 36.5%, Averaged class error: 36.6%
+
+Rattle timestamp: 2018-03-05 22:41:03 pierl
+======================================================================
+
+
+
+
+********************** Test Set ********************************
+
+Error matrix for the Decision Tree model on matches_processed.csv [test] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 249 234  48.4
+     1 158 419  27.4
+
+Error matrix for the Decision Tree model on matches_processed.csv [test] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 23.5 22.1  48.4
+     1 14.9 39.5  27.4
+
+Overall error: 37%, Averaged class error: 37.9%
+
+Rattle timestamp: 2018-03-05 22:44:10 pierl
+======================================================================
+Error matrix for the Extreme Boost model on matches_processed.csv [test] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 292 189  39.3
+     1 157 415  27.4
+
+Error matrix for the Extreme Boost model on matches_processed.csv [test] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 27.7 17.9  39.3
+     1 14.9 39.4  27.4
+
+Overall error: 32.9%, Averaged class error: 33.35%
+
+Rattle timestamp: 2018-03-05 22:44:10 pierl
+======================================================================
+Error matrix for the SVM model on matches_processed.csv [test] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 284 197  41.0
+     1 138 434  24.1
+
+Error matrix for the SVM model on matches_processed.csv [test] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 27.0 18.7  41.0
+     1 13.1 41.2  24.1
+
+Overall error: 31.8%, Averaged class error: 32.55%
+
+Rattle timestamp: 2018-03-05 22:44:11 pierl
+======================================================================
+Error matrix for the Neural Net model on matches_processed.csv [test] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 267 214  44.5
+     1 204 368  35.7
+
+Error matrix for the Neural Net model on matches_processed.csv [test] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 25.4 20.3  44.5
+     1 19.4 34.9  35.7
+
+Overall error: 39.7%, Averaged class error: 40.1%
+
+Rattle timestamp: 2018-03-05 22:44:11 pierl
+======================================================================
