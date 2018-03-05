@@ -47,5 +47,190 @@ corrplot(first_kills_correlation, method = "circle")
 ```
 ## Add code to gain insights from the other new features 
 
-```{r}
+
+# 2. HOW DO WINNING TEAMS DIFFER FROM LOSERS? --> no machine learning, just correlation.
+
+
+## 2.1 first exploration
+
+All fixed odds + handy created variables. countryname & languagename were not
+allowed (too many variables), and done twice to keep overview. RG and Reg. date
+in both sets. Most interested in how RG cases compare, so it is handy to keep
+those on the first line.
+
+```{r "explore the correlations"}
+
+matches_seperated$gold_diff_in_minute_1 <- as.numeric(matches_seperated$gold_diff_in_minute_1)
+
+set.seed(1836)
+
+## Multiple t-tests for golddiff in xth minute.
+lapply(matches_seperated[,c("gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3","gold_diff_in_minute_4", "gold_diff_in_minute_5", "gold_diff_in_minute_6", "gold_diff_in_minute_7", "gold_diff_in_minute_8", "gold_diff_in_minute_9", "gold_diff_in_minute_10","gold_diff_in_minute_11","gold_diff_in_minute_12","gold_diff_in_minute_13","gold_diff_in_minute_14","gold_diff_in_minute_15")], function(x) t.test(x ~ matches_seperated$rResult))
+# Wow already in the second minute we can see that the gold difference is a significant predictor for winning or losing! 
+
+# make a subset
+match_subset <- matches_seperated[,c("rResult", "gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3","gold_diff_in_minute_4", "gold_diff_in_minute_5", "gold_diff_in_minute_6", "gold_diff_in_minute_7", "gold_diff_in_minute_8", "gold_diff_in_minute_9", "gold_diff_in_minute_10","gold_diff_in_minute_11","gold_diff_in_minute_12","gold_diff_in_minute_13","gold_diff_in_minute_14","gold_diff_in_minute_15")]
+
+# This gets reflected in the heatmap:
+ggcorr(match_subset)
+
 ```
+
+Already in the second minute we can see that the gold difference is a significant predictor for winning or losing! 
+
+
+```{r "rough exploration"}
+# do some rough exploration
+rough_subset <- matches_seperated[,c("rResult", "gold_diff_in_minute_1", "gold_diff_in_minute_2", "gold_diff_in_minute_3", "League", "Type")]
+
+rough_subset <- matches_seperated[,c("rResult", "League", "Type")]
+
+# This one is computationally very heavy and does not give nice results for our dataset, there seems to be a difference in leagues but it is hard to see:
+ggpairs(rough_subset) +
+  theme(
+    axis.text = element_text(size = 3),
+    axis.title = element_text(size = 2),
+    legend.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(colour = NA),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "grey95"))
+```
+There seems to be a difference in leagues
+
+
+```{r "why/where does blue wins more than red"}
+# Use winner instead of Rresult to get instant nice columns:
+qplot(x = winner, data = matches) +
+  facet_grid(.~Type)
+# The mayor difference between the blue and red seems to be in the regular season
+
+qplot(x = winner, data = matches) +
+  facet_grid(.~League)
+# Only in one league the difference between red and blue is tilted the other way. More plays seems to indicate bigger differences.
+```
+Only in one league the difference between red and blue is tilted the other way. More plays seems to indicate bigger differences.
+
+```{r "splitting the data into training and test in a simple way"}
+## get 75% for training
+sampel <- floor(.75 * nrow(matches_seperated))
+
+## set the seed to make your partition reproductible
+set.seed(900)
+train_ind <- sample(seq_len(nrow(matches_seperated)), size = sampel)
+
+train <- matches_seperated[train_ind, ]
+test <- matches_seperated[-train_ind, ]
+```
+
+
+FROM HERE STARTS MY NEW ANALYSIS:
+
+
+
+# 3. BUILDING THE MODELS.
+
+## 3.1 Logistic regression
+
+See https://www.statmethods.net/advstats/glm.html
+
+We have seen now that blue has a slight advantage. 
+Now let us see if we can easily predict the winner of the match. 
+
+We will do this by looking at the column 'blue_wins':
+```{r "let's try some regression1"}
+# Logistic regression is the only valid option: http://thestatsgeek.com/2015/01/17/why-shouldnt-i-use-linear-regression-if-my-outcome-is-binary/ https://www.statmethods.net/advstats/glm.html
+
+# fit the model
+LogModel1 <- glm(bResult ~ gold_diff_in_minute_5 ,family=binomial(link='logit'),data=train)
+
+# look at a summary of it
+summary(LogModel1)
+```
+You can see that five minutes in the game, the gold difference is already a siginificant predictor.
+
+Is computed by blue - red, so it makes sense that this is a positive predictor.
+
+This will change when we add more of those gold_diff variables (due to multicollinearity):
+```{r "let's try some regression2"}
+
+# adding more variables:
+LogModel2a <- glm(bResult ~ gold_diff_in_minute_5 + gold_diff_in_minute_10 + gold_diff_in_minute_15 + gold_diff_in_minute_20 ,family=binomial(link='logit'),data=train)
+
+LogModel2b <- glm(bResult ~ gold_diff_in_minute_15 + gold_diff_in_minute_10 + gold_diff_in_minute_5 + gold_diff_in_minute_20 ,family=binomial(link='logit'),data=train)
+
+
+# look at a summary of it
+summary(LogModel2a)
+
+summary(LogModel2b)
+```
+I made two because later on, when evaluating, we can see the order does matter.
+
+
+```{r "let's try some regression3"}
+
+# adding more variables THIS SHOULD BE ADDED BY STUFF LIKE FIRST KILL BARON, FIRST KILL DRAGON ETC.:
+LogModel3 <- glm(bResult ~ gold_diff_in_minute_5 + gamelength, family=binomial(link='logit'),data=train)
+
+# look at a summary of it
+summary(LogModel3)
+```
+Interestingly, the gamelength seems to have a significant additional negative relation with whether the blue team won. So the faster the game, the more likely the blue team wins. In this specific combination (with only two variables), every minute a game is shorter increases the log odds of blue winning by 0.0122. Blue seems to have more potential for a quick win. WE SHOULD ADD MORE VARIABLES.
+
+Now we can run the anova() function on the model to analyze the table of deviance:
+```{r "let's try some regression4"}
+
+# adding more variables THIS SHOULD BE ADDED BY STUFF LIKE FIRST KILL BARON, FIRST KILL DRAGON ETC.:
+anova(LogModel1, test="Chisq")
+anova(LogModel2a, test="Chisq")
+anova(LogModel2b, test="Chisq")
+anova(LogModel3, test="Chisq")
+```
+What you would like to see is a significant drop in deviance and the AIC. you can see is that, if you put the later golddiff in first, the earlier ones will lose all their power. It also shows that deviance interpretation can be tricky: the order of variables you put in matters a lot.
+```{r "let's try some regression5"}
+
+# While no exact equivalent to the R2 of linear regression exists, the McFadden R2 index can be used to assess the model fit.
+# install.packages("pscl")
+# library(pscl)
+pR2(LogModel3)
+
+```
+I think McFadden's R2 shows that the model with 2 variables is very weak
+
+
+# 4. TESTING THE MODELS.
+
+## 4.1 Testing using the simple split
+
+https://www.r-bloggers.com/how-to-perform-a-logistic-regression-in-r/
+In the steps above, we briefly evaluated the fitting of the model, now we would like to see how the model is doing when predicting y on a new set of data. By setting the parameter type='response', R will output probabilities in the form of P(y=1|X). Our decision boundary will be 0.5. If P(y=1|X) > 0.5 then y = 1 otherwise y=0. Note that for some applications different thresholds could be a better option.
+
+```{r "Testing the models1"}
+
+fitted.results <- predict(LogModel1,test,type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+misClasificError <- mean(fitted.results != test$bResult)
+print(paste('Accuracy',1-misClasificError))
+
+```
+Original was predict(model,newdata=subset(test,select=c(2,3,4,5,6,7,8)), not sure why they used this subset.
+
+this result is somewhat dependent on the manual split of the data that I made earlier, therefore if you wish for a more precise score, you would be better off running some kind of cross validation such as k-fold cross validation.
+
+```{r "Testing the models2"}
+
+# install.packages("ROCR")
+# library(ROCR)
+p <- predict(LogModel3, test, type="response")
+pr <- prediction(p, test$bResult)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+
+```
+Original was newdata=subset(test,select=c(2,3,4,5,6,7,8)), type="response"), but not sure why they used subset
+
+If you change the variables to LogModel2b you obviously get a much nicer prediction.
