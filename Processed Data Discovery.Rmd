@@ -5,10 +5,12 @@ output: html_notebook
 ## Get correlation between the number of kills and the result of the match
 Load the data from the processed file
 ```{r}
+# install.packages("corrplot")
 library(corrplot)
 
-setwd("H:\\KE 5107 Projects\\code\\KE5107_LeagueofLegends")
-matches_data = read.csv("processed_matches.csv")
+setwd('C:/Users/User/Documents/KE5107_LeagueofLegends')
+# matches <- read.csv("matches.csv", header=TRUE, sep=",")
+matches = read.csv("processed_matches.csv")
 game_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
 # Get the column name for the red team
@@ -32,7 +34,7 @@ all_num_kills_columns_with_result <- c(all_num_kills_columns, "bResult")
 
 
 # Get correlation between the number of kills and the result of the match
-killscor <- cor(matches_data[,unlist(all_num_kills_columns_with_result)])
+killscor <- cor(matches[,unlist(all_num_kills_columns_with_result)])
 corrplot(killscor, method = "circle")
 
 ```
@@ -42,13 +44,13 @@ corrplot(killscor, method = "circle")
 first_kill_columns_with_result <- c("TowersFirstKillBy", "InhibsFirstKillBy", "DragonsFirstKillBy", "BaronsFirstKillBy", "bResult")
 
 # Get correlation between the first kill and the result of the match
-first_kills_correlation <- cor(matches_data[,unlist(first_kill_columns_with_result)])
+first_kills_correlation <- cor(matches[,unlist(first_kill_columns_with_result)])
 corrplot(first_kills_correlation, method = "circle")
 ```
 ## Add code to gain insights from the other new features 
 
 
-# 2. HOW DO WINNING TEAMS DIFFER FROM LOSERS? --> no machine learning, just correlation.
+# 2. HOW DO WINNING TEAMS DIFFER FROM LOSERS? --> no machine learning, just correlation (using .
 
 
 ## 2.1 first exploration
@@ -59,6 +61,11 @@ in both sets. Most interested in how RG cases compare, so it is handy to keep
 those on the first line.
 
 ```{r "explore the correlations"}
+
+
+
+
+
 
 matches_seperated$gold_diff_in_minute_1 <- as.numeric(matches_seperated$gold_diff_in_minute_1)
 

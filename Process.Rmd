@@ -498,4 +498,5 @@ if (shouldDiscardTimeSeriesColumnsFromProcessedFile) {
 ## Write the current contents of the matchesData dataframe into a CSV in the current folder
 ```{r}
 write.csv(matchesData, processedFileNameWithExtension, row.names = FALSE)
+write.csv(matchesData_seperated, file = "golddifferences.csv", row.names = FALSE)
 ```
