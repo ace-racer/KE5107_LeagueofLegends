@@ -1,5 +1,12 @@
 test
 .Rproj.user
+<<<<<<< HEAD
 .RData
 .Rhistory
 LOL.Rproj
+=======
+/.DS_Store
+/.RData
+/.Rhistory
+*.Rproj
+>>>>>>> pier
