@@ -19,8 +19,8 @@ output: html_notebook
 ```{r}
 library(stringr)
 
-setwd('C:/Users/User/Dropbox/NUS/Data mining/leagueoflegends')
-matchesData = read.csv("matches.csv", header=TRUE, sep=",")
+setwd("H:\\KE 5107 Projects\\code\\KE5107_LeagueofLegends")
+matchesData = read.csv("data/matches.csv")
 gameElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
 # Prepends r to the item
@@ -56,6 +56,39 @@ getSmallestNumber <- function(value) {
   return(10000)
 }
 
+# Get the number of items less than 5 mins, 10 mins, 20 mins, quarter game and half game
+getNumberOfItemsLessThanEqualToValue <- function(value, gameLength, option) {
+  numberOfDestroysByTime = 0
+  if (value != "[]") {
+
+
+    # Get all the number strings from the list
+    allNumbers <- str_extract_all(value, "[0-9]*[.][0-9]*")
+
+    # Get the number strings in a list
+    allNumbersList <- unlist(allNumbers)
+
+    # Convert each item to a number
+    allNumbersList <- as.numeric(allNumbersList)
+
+
+    quarterGameLength <- 0.25 * gameLength
+    halfGameLength <- 0.5 * gameLength
+
+    # Get the values for 5 mins, 10 mins, 20 mins and quarter and half time into the game
+    lessThanValues <- c(5, 10, 20, quarterGameLength, halfGameLength)
+    requiredLessThanValue = lessThanValues[option]
+
+    for (i in 1:length(allNumbersList)){
+        if (allNumbersList[i] <= requiredLessThanValue){
+          numberOfDestroysByTime <- numberOfDestroysByTime + 1
+        }
+    }
+  }
+  
+  return (numberOfDestroysByTime)
+}
+
 # Get the Kills columns for blue and red teams
 blueKillsColumns <- lapply(gameElements, prependBlue)
 redKillsColumns <- lapply(gameElements, prependRed)
@@ -71,7 +104,7 @@ for (i in 1:length(allKillsColumns)) {
   matchesData[,outputColumnName] <- str_count(matchesData[,columnName], "\\[")-1
 }
 
-firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
+firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons", "Kills") 
 for (i in 1: length(firstKillElements)) {
   columnName <- unlist(firstKillElements[i])
   
@@ -97,6 +130,17 @@ for (i in 1: length(firstKillElements)) {
   firstKillByColumnName <- paste(columnName, "FirstKillBy",sep="")
   
   matchesData[,firstKillByColumnName] <- as.numeric(matchesData[,blueOutputColumnName] < matchesData[,redOutputColumnName])
+  
+  columnSuffices <- c("5Mins", "10Mins", "20Mins", "QuarterGame", "HalfGame")
+  
+  # Generate the columns to contain the interval wise number of game elements destroyed
+  for (j in 1:5) {
+     redIntervalColumnName <-  paste(redColumnName, columnSuffices[j], sep="")
+     blueIntervalColumnName <- paste(blueColumnName, columnSuffices[j], sep="") 
+     matchesData[,blueIntervalColumnName] <- unlist(mapply(getNumberOfItemsLessThanEqualToValue, matchesData[,blueColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+  
+  matchesData[,redIntervalColumnName] <- unlist(mapply(getNumberOfItemsLessThanEqualToValue, matchesData[,redColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+  }
 }
 
 ```
