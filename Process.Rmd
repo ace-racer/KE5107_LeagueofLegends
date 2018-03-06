@@ -5,7 +5,7 @@ output: html_notebook
 
 ## Global configuration variables to control the data in the generated file
 ```{r}
- shouldDiscardTimeSeriesColumnsFromProcessedFile <- FALSE
+ shouldDiscardTimeSeriesColumnsFromProcessedFile <- TRUE
  processedFileNameWithExtension <- "processed_matches.csv"
 ```
 
@@ -88,6 +88,36 @@ getNumberOfItemsLessThanEqualToValue <- function(value, gameLength, option) {
   return (numberOfDestroysByTime)
 }
 
+# Get the number of items less than 5 mins, 10 mins, 20 mins, quarter game and half game
+getAbsoluteGoldLessThanEqualToValue <- function(value, gameLength, option) {
+  goldAmount = 0
+  if (value != "[]") {
+
+
+    # Get all the number strings from the list
+    allNumbers <- str_extract_all(value, "[0-9]+")
+    
+
+    # Get the number strings in a list
+    allNumbersList <- unlist(allNumbers)
+
+    # Convert each item to a number
+    allNumbersList <- as.numeric(allNumbersList)
+
+
+    quarterGameLength <- 0.25 * gameLength
+    halfGameLength <- 0.5 * gameLength
+
+    # Get the values for 5 mins, 10 mins, 20 mins and quarter and half time into the game
+    lessThanValues <- c(5, 10, 20, quarterGameLength, halfGameLength)
+    requiredLessThanValue = lessThanValues[option]
+
+    goldAmount = allNumbersList[as.integer(round(requiredLessThanValue))]
+  }
+  
+  return (goldAmount)
+}
+
 # Get the Kills columns for blue and red teams
 blueKillsColumns <- lapply(gameElements, prependBlue)
 redKillsColumns <- lapply(gameElements, prependRed)
@@ -103,10 +133,15 @@ for (i in 1:length(allKillsColumns)) {
   matchesData[,outputColumnName] <- str_count(matchesData[,columnName], "\\[")-1
 }
 
-firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons", "Kills") 
+firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons", "Kills", "gold") 
 for (i in 1: length(firstKillElements)) {
   columnName <- unlist(firstKillElements[i])
-  
+   
+  if(columnName == "gold") {
+    redColumnName <- "goldred"
+    blueColumnName <- "goldblue"
+  }
+  else {
   # Get the red and blue specific column names
   redColumnName <- paste("r", columnName,sep="")
   blueColumnName <- paste("b", columnName,sep="")
@@ -129,16 +164,27 @@ for (i in 1: length(firstKillElements)) {
   firstKillByColumnName <- paste(columnName, "FirstKillBy",sep="")
   
   matchesData[,firstKillByColumnName] <- as.numeric(matchesData[,blueOutputColumnName] < matchesData[,redOutputColumnName])
+  }
+  
+  
   
   columnSuffices <- c("5Mins", "10Mins", "20Mins", "QuarterGame", "HalfGame")
   
   # Generate the columns to contain the interval wise number of game elements destroyed
-  for (j in 1:5) {
+  for (j in 1:length(columnSuffices)) {
      redIntervalColumnName <-  paste(redColumnName, columnSuffices[j], sep="")
      blueIntervalColumnName <- paste(blueColumnName, columnSuffices[j], sep="") 
+     
+     if(columnName == "gold") {
+        matchesData[,blueIntervalColumnName] <- unlist(mapply(getAbsoluteGoldLessThanEqualToValue, matchesData[,blueColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+  
+  matchesData[,redIntervalColumnName] <- unlist(mapply(getAbsoluteGoldLessThanEqualToValue, matchesData[,redColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+     }
+     else {
      matchesData[,blueIntervalColumnName] <- unlist(mapply(getNumberOfItemsLessThanEqualToValue, matchesData[,blueColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
   
   matchesData[,redIntervalColumnName] <- unlist(mapply(getNumberOfItemsLessThanEqualToValue, matchesData[,redColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+     }
   }
 }
 
@@ -174,13 +220,13 @@ y <-ifelse(matches1$rKills == "[]",1,0)
 matches1$FirstBlood <- y
 
 #We will merge the dataframes now.
-matches_total <- rbind(matches,matches1)
+matchesData <- rbind(matches,matches1)
 
 #Blue tem stats
-matches_tot_bwins <- nrow(matches_total[which(matches_total$bResult == "1")  ,])
+matches_tot_bwins <- nrow(matchesData[which(matchesData$bResult == "1")  ,])
 #matches_tot_bwins  
 #3845
-matches_bfirstblood <- nrow(matches_total[which(matches_total$bResult == "1"  & matches_total$FirstBlood == "1" )  ,])
+matches_bfirstblood <- nrow(matchesData[which(matchesData$bResult == "1"  & matchesData$FirstBlood == "1" )  ,])
 #matches_bfirstblood
 #2388
 win_bratio <- matches_bfirstblood/matches_tot_bwins
@@ -188,10 +234,10 @@ win_bratio
 #0.621066319895969
 
 #Red Team Stats
-matches_tot_rwins <- nrow(matches_total[which(matches_total$rResult == "1")  ,])
+matches_tot_rwins <- nrow(matchesData[which(matchesData$rResult == "1")  ,])
 #matches_tot_rwins  
 #3213
-matches_rfirstblood <- nrow(matches_total[which(matches_total$rResult == "1"  & matches_total$FirstBlood == "0" )  ,])
+matches_rfirstblood <- nrow(matchesData[which(matchesData$rResult == "1"  & matchesData$FirstBlood == "0" )  ,])
 #matches_rfirstblood
 #1977
 win_rratio <- matches_rfirstblood/matches_tot_rwins
@@ -203,34 +249,34 @@ golddiff_data = gsub("\\[|\\]", "", matchesData$golddiff)
 golddiff_data = do.call("rbind", strsplit(golddiff_data, ",")) # remove the , 
 golddiff_times = data.frame(apply(golddiff_data, 2, as.numeric)) # convert str to num
 #golddiff_times
-matches_total$golddiff_5mins <- golddiff_times$X5
-#matches_total$golddiff_5mins
-matches_total$golddiff_10mins <- golddiff_times$X10
-#matches_total$golddiff_10mins
-matches_total$golddiff_20mins <- golddiff_times$X20
-#matches_total$golddiff_20mins
+matchesData$golddiff_5mins <- golddiff_times$X5
+
+matchesData$golddiff_10mins <- golddiff_times$X10
+
+matchesData$golddiff_20mins <- golddiff_times$X20
+
 
 #Now we will fetch out the Gold Difference and Winning Combinations
 #The ratio of Red Team Gold difference for which they were leading for first 20 mins
-result_20mins <-matches_total[which((strtoi(matches_total$golddiff_20mins, base = 0L))<0 & matches_total$bResult == '0'),]
+result_20mins <-matchesData[which((strtoi(matchesData$golddiff_20mins, base = 0L))<0 & matchesData$bResult == '0'),]
 rratio_20mins <-nrow(result_20mins)/matches_tot_rwins
 #rratio_20mins
 #0.447245564892624
 
 #The ratio of Blue Team Gold difference for which they were leading for first 20 mins
-result_20mins <-matches_total[which((strtoi(matches_total$golddiff_20mins, base = 0L))<0 & matches_total$bResult == '1'),]
+result_20mins <-matchesData[which((strtoi(matchesData$golddiff_20mins, base = 0L))<0 & matchesData$bResult == '1'),]
 bratio_20mins <-nrow(result_20mins)/matches_tot_bwins
 #bratio_20mins
 #0.466579973992198
 
 #The ratio of Red Team Gold difference for which they were leading for first 10 mins
-result_10mins <-matches_total[which((strtoi(matches_total$golddiff_10mins, base = 0L))<0 & matches_total$bResult == '0'),]
+result_10mins <-matchesData[which((strtoi(matchesData$golddiff_10mins, base = 0L))<0 & matchesData$bResult == '0'),]
 rratio_10mins <-nrow(result_10mins)/matches_tot_rwins
 #rratio_10mins
 #0.48708372237784
 
 #The ratio of Blue Team Gold difference for which they were leading for first 10 mins
-result_10mins <-matches_total[which((strtoi(matches_total$golddiff_10mins, base = 0L))<0 & matches_total$bResult == '1'),]
+result_10mins <-matchesData[which((strtoi(matchesData$golddiff_10mins, base = 0L))<0 & matchesData$bResult == '1'),]
 bratio_10mins <-nrow(result_10mins)/matches_tot_bwins
 #bratio_10mins
 #0.4777633289987
@@ -458,63 +504,47 @@ summary(matchesData$YearSeason)
 ```
 
 ```{r "0.6 Making subsets"}
-# It gets messy very easily so extra dataset instead of extra variable:
-matchesData_seperated <- matchesData %>%
-  separate(as.numeric(golddiff), into = c(create_column_names(max(matchesData$gamelength), "gold_diff_in_minute")), sep = "\\,")
 
-bans_seperated <- matchesData %>%    
-  separate(blueBans, into = c(create_column_names(5, "bansblue")), sep = "\\,")%>% 
-  separate(redBans, into = c(create_column_names(5, "bansred")), sep = "\\,")
-
-# Make them numeric
-matchesData_seperated <- japply(matchesData_seperated, c(create_column_names(max(matchesData$gamelength), "gold_diff_in_minute")), as.numeric )
-# Hooray it works:
-str(matchesData_seperated$gold_diff_in_minute_80)
-
-# Make them categorical --> somehow he doesn't want to do this when with surrounded with ', so do seperately
-# bans_seperated <- japply(bans_seperated, c(create_column_names(5, "bansblue")), as.factor)
-# bans_seperated <- japply(bans_seperated, c("bansblue_2", "bansblue_3"), as.factor)
-
-# get rid of the annoying space
-bans_seperated$bansblue_2 <- substr(bans_seperated$bansblue_2, 2, 100)
-bans_seperated$bansblue_3 <- substr(bans_seperated$bansblue_2, 2, 100)
-bans_seperated$bansblue_4 <- substr(bans_seperated$bansblue_2, 2, 100)
-bans_seperated$bansblue_5 <- substr(bans_seperated$bansblue_2, 2, 100)
-
-# make a factor out of everything
-bans_seperated$bansblue_1 <- as.factor(bans_seperated$bansblue_1)
-bans_seperated$bansblue_2 <- as.factor(bans_seperated$bansblue_2)
-bans_seperated$bansblue_3 <- as.factor(bans_seperated$bansblue_3)
-bans_seperated$bansblue_4 <- as.factor(bans_seperated$bansblue_4)
-bans_seperated$bansblue_5 <- as.factor(bans_seperated$bansblue_5)
-
-summary(bans_seperated$bansblue_1)
-
-bans_seperated$bansred_2 <- substr(bans_seperated$bansred_2, 2, 100)
-bans_seperated$bansred_3 <- substr(bans_seperated$bansred_2, 2, 100)
-bans_seperated$bansred_4 <- substr(bans_seperated$bansred_2, 2, 100)
-bans_seperated$bansred_5 <- substr(bans_seperated$bansred_2, 2, 100)
-
-bans_seperated$bansred_1 <- as.factor(bans_seperated$bansred_1)
-bans_seperated$bansred_2 <- as.factor(bans_seperated$bansred_2)
-bans_seperated$bansred_3 <- as.factor(bans_seperated$bansred_3)
-bans_seperated$bansred_4 <- as.factor(bans_seperated$bansred_4)
-bans_seperated$bansred_5 <- as.factor(bans_seperated$bansred_5)
-
-summary(bans_seperated$bansred_1)
+# # get rid of the annoying space
+# bans_seperated$bansblue_2 <- substr(bans_seperated$bansblue_2, 2, 100)
+# bans_seperated$bansblue_3 <- substr(bans_seperated$bansblue_2, 2, 100)
+# bans_seperated$bansblue_4 <- substr(bans_seperated$bansblue_2, 2, 100)
+# bans_seperated$bansblue_5 <- substr(bans_seperated$bansblue_2, 2, 100)
+# 
+# # make a factor out of everything
+# bans_seperated$bansblue_1 <- as.factor(bans_seperated$bansblue_1)
+# bans_seperated$bansblue_2 <- as.factor(bans_seperated$bansblue_2)
+# bans_seperated$bansblue_3 <- as.factor(bans_seperated$bansblue_3)
+# bans_seperated$bansblue_4 <- as.factor(bans_seperated$bansblue_4)
+# bans_seperated$bansblue_5 <- as.factor(bans_seperated$bansblue_5)
+# 
+# summary(bans_seperated$bansblue_1)
+# 
+# bans_seperated$bansred_2 <- substr(bans_seperated$bansred_2, 2, 100)
+# bans_seperated$bansred_3 <- substr(bans_seperated$bansred_2, 2, 100)
+# bans_seperated$bansred_4 <- substr(bans_seperated$bansred_2, 2, 100)
+# bans_seperated$bansred_5 <- substr(bans_seperated$bansred_2, 2, 100)
+# 
+# bans_seperated$bansred_1 <- as.factor(bans_seperated$bansred_1)
+# bans_seperated$bansred_2 <- as.factor(bans_seperated$bansred_2)
+# bans_seperated$bansred_3 <- as.factor(bans_seperated$bansred_3)
+# bans_seperated$bansred_4 <- as.factor(bans_seperated$bansred_4)
+# bans_seperated$bansred_5 <- as.factor(bans_seperated$bansred_5)
+# 
+# summary(bans_seperated$bansred_1)
 
 # it would be cool if the first bans & pick get a higher weight than the second bans for the popularity score
 # so first ban *5 + second ban *4 .. and so on (for both red and blue and pick and ban)
 
 # then just the score * the picks for each team and we got ourselves a perfect predictor (I hope)
 
-matchesData$golddiff <- NULL
-matchesData_seperated$golddiff <- NULL
-
-# may be interesting to make a red vs blue won dataset.
-
-blueset <- subset(matchesData, winner == 'blue')
-redset <- subset(matchesData, winner == 'red')
+# matchesData$golddiff <- NULL
+# matchesData_seperated$golddiff <- NULL
+# 
+# # may be interesting to make a red vs blue won dataset.
+# 
+# blueset <- subset(matchesData, winner == 'blue')
+# redset <- subset(matchesData, winner == 'red')
 ```
 
 
@@ -541,5 +571,5 @@ if (shouldDiscardTimeSeriesColumnsFromProcessedFile) {
 ## Write the current contents of the matchesData dataframe into a CSV in the current folder
 ```{r}
 write.csv(matchesData, processedFileNameWithExtension, row.names = FALSE)
-write.csv(matchesData_seperated, file = "golddifferences.csv", row.names = FALSE)
+#write.csv(matchesData_seperated, file = "golddifferences.csv", row.names = FALSE)
 ```
