@@ -18,6 +18,7 @@ Section 4: Further exploratory analysis to understand game dynamics
 
 ```{r "0.1 packages"}
 library(ggplot2)
+library(GGally)
 library(tidyr)
 library(stringr)
 library(dplyr)
@@ -57,6 +58,7 @@ remove_first_last <- function(inputstring){
 
 
 ```{r "0.4 Data Wrangling"}
+matches <- read.csv("data/matches.csv")
 
 # 0.4.1 viewing & correcting types
 str(matches)
@@ -208,60 +210,8 @@ golddiff_subset <- matches_seperated[,c("gold diff in minute 1",  "gold diff in 
  "gold diff in minute 12", "gold diff in minute 13", "gold diff in minute 14", "gold diff in minute 15",
  "gold diff in minute 16", "gold diff in minute 17", "gold diff in minute 18", "gold diff in minute 19",
  "gold diff in minute 20")]
-# summary(gam_subset)
-# ggpairs(gam_subset[sample.int(nrow(gam_subset), 1000),]) +
-#   theme(
-#     axis.text = element_text(size = 3),
-#     axis.title = element_text(size = 2),
-#     legend.background = element_rect(fill = "white"),
-#     panel.grid.major = element_line(colour = NA),
-#     panel.grid.minor = element_blank(),
-#     panel.background = element_rect(fill = "grey95"))
 
-# gam_subset2 <- gam[,c("RG_case", 
-#                       "age_at_registration",
-#                       "frequency_fixedodds",
-#                       "bets_per_day_fixedodds",
-#                       "euros_per_bet_fixedodds",
-#                       "net_loss_fixedodds",
-#                       "percent_lost_fixedodds",
-#                       "all_bets",
-#                       "all_stakes",
-#                       "Registration_Date_Year.bucket",
-#                       "Registration_Date_Year.largebucket")]
-# # ggpairs(gam_subset[sample.int(nrow(gam_subset), 1000),]) +
-# #   theme(
-# #     axis.text = element_text(size = 3),
-# #     axis.title = element_text(size = 2),
-# #     legend.background = element_rect(fill = "white"),
-# #     panel.grid.major = element_line(colour = NA),
-# #     panel.grid.minor = element_blank(),
-# #     panel.background = element_rect(fill = "grey95"))
-# 
-# # only numerical:
-# 
-# gam_subset3 <- gam[,c("age_at_registration",
-#                       "frequency_fixedodds",
-#                       "bets_per_day_fixedodds",
-#                       "euros_per_bet_fixedodds",
-#                       "net_loss_fixedodds",
-#                       "percent_lost_fixedodds",
-#                       "all_bets",
-#                       "all_stakes",
-#                       "Registration_Date_Year.bucket",
-#                       "Registration_Date_Year.largebucket",
-#                       "Missing_Daily_Transactions",
-#                       "First_Deposit_Date",
-#                       "Registration_date",
-#                       "sum_stakes_fixedodds", 
-#                       "bettingdays_fixedodds",
-#                       "duration_fixedodds")]
-
-
-## Multiple t-tests for time, age, frail between genders.
-lapply(gam[,c("bettingdays_fixedodds", "sum_stakes_fixedodds", "bets_per_day_fixedodds")], function(x) t.test(x ~ gam$RG_case))
-
-ggcorr(golddiff_subset[sample.int(nrow(golddiff_subset), 1000),])
+# ggcorr(golddiff_subset[sample.int(nrow(golddiff_subset), 1000),])
 ```
 Exploring top 10 champions used in the top position 
 ```{r}
