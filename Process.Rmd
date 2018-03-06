@@ -55,6 +55,39 @@ getSmallestNumber <- function(value) {
   return(10000)
 }
 
+# Get the number of items less than 5 mins, 10 mins, 20 mins, quarter game and half game
+getNumberOfItemsLessThanEqualToValue <- function(value, gameLength, option) {
+  numberOfDestroysByTime = 0
+  if (value != "[]") {
+
+
+    # Get all the number strings from the list
+    allNumbers <- str_extract_all(value, "[0-9]*[.][0-9]*")
+
+    # Get the number strings in a list
+    allNumbersList <- unlist(allNumbers)
+
+    # Convert each item to a number
+    allNumbersList <- as.numeric(allNumbersList)
+
+
+    quarterGameLength <- 0.25 * gameLength
+    halfGameLength <- 0.5 * gameLength
+
+    # Get the values for 5 mins, 10 mins, 20 mins and quarter and half time into the game
+    lessThanValues <- c(5, 10, 20, quarterGameLength, halfGameLength)
+    requiredLessThanValue = lessThanValues[option]
+
+    for (i in 1:length(allNumbersList)){
+        if (allNumbersList[i] <= requiredLessThanValue){
+          numberOfDestroysByTime <- numberOfDestroysByTime + 1
+        }
+    }
+  }
+  
+  return (numberOfDestroysByTime)
+}
+
 # Get the Kills columns for blue and red teams
 blueKillsColumns <- lapply(gameElements, prependBlue)
 redKillsColumns <- lapply(gameElements, prependRed)
@@ -70,7 +103,7 @@ for (i in 1:length(allKillsColumns)) {
   matchesData[,outputColumnName] <- str_count(matchesData[,columnName], "\\[")-1
 }
 
-firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
+firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons", "Kills") 
 for (i in 1: length(firstKillElements)) {
   columnName <- unlist(firstKillElements[i])
   
@@ -96,6 +129,17 @@ for (i in 1: length(firstKillElements)) {
   firstKillByColumnName <- paste(columnName, "FirstKillBy",sep="")
   
   matchesData[,firstKillByColumnName] <- as.numeric(matchesData[,blueOutputColumnName] < matchesData[,redOutputColumnName])
+  
+  columnSuffices <- c("5Mins", "10Mins", "20Mins", "QuarterGame", "HalfGame")
+  
+  # Generate the columns to contain the interval wise number of game elements destroyed
+  for (j in 1:5) {
+     redIntervalColumnName <-  paste(redColumnName, columnSuffices[j], sep="")
+     blueIntervalColumnName <- paste(blueColumnName, columnSuffices[j], sep="") 
+     matchesData[,blueIntervalColumnName] <- unlist(mapply(getNumberOfItemsLessThanEqualToValue, matchesData[,blueColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+  
+  matchesData[,redIntervalColumnName] <- unlist(mapply(getNumberOfItemsLessThanEqualToValue, matchesData[,redColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+  }
 }
 
 ```
@@ -198,6 +242,8 @@ bratio_10mins <-nrow(result_10mins)/matches_tot_bwins
 ```{r}
 # Charles's snippet to get YearSeason variable for easier seasonal handling
 matchesData$YearSeason <- ifelse(matchesData$Season == "Spring", paste("01/01/", as.character(matchesData$Year), sep=""), paste("01/06/", as.character(matchesData$Year), sep=""))
+
+# install.packages("data.table")
 
 library(data.table)
 
@@ -341,6 +387,135 @@ for (season_num in 1:nrow(seasons)) {
 
 ```
 
+```{r "0.3 Functions"}
+
+# 0.3.1 cuberoot
+cuberoot_trans = function() trans_new('cuberoot', 
+                                      transform = function(x) x^(1/3), 
+                                      inverse = function(x) X^3)
+
+# 0.3.2 Define new column names: takes in the max number for column and a name, outputs multiple columns
+# Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
+create_column_names <- function(columns, namestring){
+  maxnr <- max(matchesData$columns)
+  vectofnr = c();
+  for (i in 1:columns){
+    # print(i)
+    vectofnr[i] <- paste(namestring, as.character(i), sep="_")
+    # print(vectofnr)
+  }
+  return(vectofnr)
+}
+
+ 
+# because it is so slow, maybe you can also put it in a global var:
+# listofcolumns <- create_column_names(gamelength, 'gold')
+
+# 0.3.3 remove the first and last char
+remove_first_last <- function(inputstring){
+  return(substring(inputstring, 2, str_length(inputstring)-1))
+}
+
+```
+
+```{r "0.4 Data Wrangling"}
+
+# 0.4.1 viewing & correcting types
+str(matchesData)
+# Types seem ok, but have to correct the adjusted variables.
+
+## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
+matchesData$winner <- ifelse(matchesData$bResult > 0, c("blue"), c("red"))
+
+## 0.4.3 get rid of [ & ] for later use --> only use once!
+matchesData$goldblue <- remove_first_last(matchesData$goldblue)
+matchesData$golddiff <- remove_first_last(matchesData$golddiff)
+matchesData$goldred <- remove_first_last(matchesData$goldred)
+matchesData$blueBans <- remove_first_last(matchesData$blueBans)
+matchesData$redBans <- remove_first_last(matchesData$redBans)
+
+
+## 0.4.4 Square the data if scewed 
+
+# to do
+
+```
+
+```{r "0.5 New variables"}
+# make a better match variable for easy reading.
+matchesData$winner <- ifelse(matchesData$bResult > 0, c("blue"), c("red"))
+
+# make a better time variable out of year and season
+matchesData$YearSeason <- ifelse(matchesData$Season == "Spring", paste("01/01/", as.character(matchesData$Year), sep=""), paste("01/06/", as.character(matchesData$Year), sep=""))
+
+str(matchesData$YearSeason)
+summary(matchesData$Season)
+
+
+matchesData$YearSeason <- as.Date(matchesData$YearSeason, format = "%d/%m/%Y")
+
+summary(matchesData$YearSeason)
+```
+
+```{r "0.6 Making subsets"}
+# It gets messy very easily so extra dataset instead of extra variable:
+matchesData_seperated <- matchesData %>%
+  separate(as.numeric(golddiff), into = c(create_column_names(max(matchesData$gamelength), "gold_diff_in_minute")), sep = "\\,")
+
+bans_seperated <- matchesData %>%    
+  separate(blueBans, into = c(create_column_names(5, "bansblue")), sep = "\\,")%>% 
+  separate(redBans, into = c(create_column_names(5, "bansred")), sep = "\\,")
+
+# Make them numeric
+matchesData_seperated <- japply(matchesData_seperated, c(create_column_names(max(matchesData$gamelength), "gold_diff_in_minute")), as.numeric )
+# Hooray it works:
+str(matchesData_seperated$gold_diff_in_minute_80)
+
+# Make them categorical --> somehow he doesn't want to do this when with surrounded with ', so do seperately
+# bans_seperated <- japply(bans_seperated, c(create_column_names(5, "bansblue")), as.factor)
+# bans_seperated <- japply(bans_seperated, c("bansblue_2", "bansblue_3"), as.factor)
+
+# get rid of the annoying space
+bans_seperated$bansblue_2 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_3 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_4 <- substr(bans_seperated$bansblue_2, 2, 100)
+bans_seperated$bansblue_5 <- substr(bans_seperated$bansblue_2, 2, 100)
+
+# make a factor out of everything
+bans_seperated$bansblue_1 <- as.factor(bans_seperated$bansblue_1)
+bans_seperated$bansblue_2 <- as.factor(bans_seperated$bansblue_2)
+bans_seperated$bansblue_3 <- as.factor(bans_seperated$bansblue_3)
+bans_seperated$bansblue_4 <- as.factor(bans_seperated$bansblue_4)
+bans_seperated$bansblue_5 <- as.factor(bans_seperated$bansblue_5)
+
+summary(bans_seperated$bansblue_1)
+
+bans_seperated$bansred_2 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_3 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_4 <- substr(bans_seperated$bansred_2, 2, 100)
+bans_seperated$bansred_5 <- substr(bans_seperated$bansred_2, 2, 100)
+
+bans_seperated$bansred_1 <- as.factor(bans_seperated$bansred_1)
+bans_seperated$bansred_2 <- as.factor(bans_seperated$bansred_2)
+bans_seperated$bansred_3 <- as.factor(bans_seperated$bansred_3)
+bans_seperated$bansred_4 <- as.factor(bans_seperated$bansred_4)
+bans_seperated$bansred_5 <- as.factor(bans_seperated$bansred_5)
+
+summary(bans_seperated$bansred_1)
+
+# it would be cool if the first bans & pick get a higher weight than the second bans for the popularity score
+# so first ban *5 + second ban *4 .. and so on (for both red and blue and pick and ban)
+
+# then just the score * the picks for each team and we got ourselves a perfect predictor (I hope)
+
+matchesData$golddiff <- NULL
+matchesData_seperated$golddiff <- NULL
+
+# may be interesting to make a red vs blue won dataset.
+
+blueset <- subset(matchesData, winner == 'blue')
+redset <- subset(matchesData, winner == 'red')
+```
 
 
 ## Code to remove existing columns from the processed file that will be used for creating models
@@ -366,4 +541,5 @@ if (shouldDiscardTimeSeriesColumnsFromProcessedFile) {
 ## Write the current contents of the matchesData dataframe into a CSV in the current folder
 ```{r}
 write.csv(matchesData, processedFileNameWithExtension, row.names = FALSE)
+write.csv(matchesData_seperated, file = "golddifferences.csv", row.names = FALSE)
 ```
