@@ -1,0 +1,115 @@
+
+rm(list=ls())
+matches = read.csv('C:\\Users\\pierl\\Dropbox\\Machine_Learning\\KE5107\\processed\\matches.csv')
+#matches = read.csv('/Users/pierlim/Dropbox/Machine_Learning/KE5107/processed/matches.csv')
+matches$YearSeason <- ifelse(matches$Season == "Spring", paste("01/01/", as.character(matches$Year), sep=""), paste("01/06/", as.character(matches$Year), sep=""))
+
+
+library(data.table)
+library(ggplot2)
+# Total matches played by each team (consider them as blue or red)
+blueTeams = data.frame(table(matches$blueTeamTag))
+redTeams = data.frame(table(matches$redTeamTag))
+names(blueTeams)[names(blueTeams) == 'Var1'] <- 'Team'
+names(redTeams)[names(redTeams) == 'Var1'] <- 'Team'
+combinedPlayed <- merge(blueTeams, redTeams, by="Team", all=TRUE)
+setnames(combinedPlayed, "Freq.y", "rMatchesPlayed")
+setnames(combinedPlayed, "Freq.x", "bMatchesPlayed")
+combinedPlayed$totalPlayed <- combinedPlayed$bMatchesPlayed + combinedPlayed$rMatchesPlayed
+
+# Get each team wins, whether they won as blue or red
+bluewin <- subset(matches, matches$bResult==1)
+redwin <- subset(matches, matches$rResult==1)
+blueTeamWin = data.frame(table(bluewin$blueTeamTag))
+redTeamWin = data.frame(table(redwin$redTeamTag))
+names(blueTeamWin)[names(blueTeamWin) == 'Var1'] <- 'Team'
+names(redTeamWin)[names(redTeamWin) == 'Var1'] <- 'Team'
+combinedWins <- merge(blueTeamWin, redTeamWin, by="Team", all=TRUE)
+setnames(combinedWins, "Freq.y", "rMatchesWon")
+setnames(combinedWins, "Freq.x", "bMatchesWon")
+combinedWins$totalWon <- combinedWins$bMatchesWon + combinedWins$rMatchesWon
+
+# Merge and calc the win efficiency of each team
+combinedTeams <- merge(combinedWins, combinedPlayed, by="Team")
+combinedTeams$winEfficiency = combinedTeams$totalWon / combinedTeams$totalPlayed
+combinedTeams[is.na(combinedTeams)] <- 0 
+
+# Plotting top 20 just for visualization
+top20efficient <- (combinedTeams[with(combinedTeams, order(-combinedTeams$winEfficiency)), ])[1:20, ]
+ggplot(top20efficient, aes(x=Team, y=winEfficiency)) + geom_bar(stat="identity") +ggtitle("Top 20 Teams Most Efficient At Winning") + theme(plot.title = element_text(hjust = 0.5))
+
+movetolast <- function(data, move) {
+  data[c(setdiff(names(data), move), move)]
+}
+
+combinedTeams_blue = combinedTeams[,-c(2:7)] # remove unecessary columns
+setnames(combinedTeams_blue, "winEfficiency", "bWinEfficiency")
+setnames(combinedTeams_blue, "Team", "blueTeamTag")
+matches <- merge(combinedTeams_blue, matches, by="blueTeamTag")
+
+combinedTeams_red = combinedTeams[,-c(2:7)] # remove unecessary columns
+setnames(combinedTeams_red, "winEfficiency", "rWinEfficiency")
+setnames(combinedTeams_red, "Team", "redTeamTag")
+matches <- merge(combinedTeams_red, matches, by="redTeamTag")
+
+matches <- (matches[with(matches, order(matches$League)), ])
+head(matches)
+movetolast(matches, c("bWinEfficiency", "rWinEfficiency"))
+#write.csv(matches, file = "matches_processed.csv")
+
+
+library(plyr)
+
+# add new columns to matches
+matches$isBluePreferredLineup <- 0
+matches$isRedPreferredLineup <- 0
+matches$isBluePreferredChamps <- 0
+matches$isRedPreferredChamps <- 0
+
+getTopData <- function(data, a, b, c, d, e) {
+  top <- names (sort(table(data[[a]]), decreasing=TRUE)[1] )
+  adc <- names (sort(table(data[[b]]), decreasing=TRUE)[1] )
+  jungle <- names (sort(table(data[[c]]), decreasing=TRUE)[1])
+  support <- names (sort(table(data[[d]]), decreasing=TRUE)[1])
+  middle <- names (sort(table(data[[e]]), decreasing=TRUE)[1])
+  
+  return(list(top, adc, jungle, support, middle)) 
+}
+
+seasons = data.frame(table(matches$YearSeason))
+names(seasons)[names(seasons) == 'Var1'] <- 'YearSeasons'
+
+for (season_num in 1:nrow(seasons)) {
+  Season <- seasons[season_num,1] # 7 in total
+
+  for (row  in 1:nrow(combinedPlayed)) { 
+    Team <- combinedPlayed[row, 1]
+    if (is.na(Team)) next # skip nonsense no team name data
+    
+    # Get all instances of when this team wins for this season (blue/red)
+    blueWins <- matches[which(matches$blueTeamTag==Team & matches$bResult==1 & matches$YearSeason==Season),]
+    redWins <- matches[which(matches$redTeamTag==Team & matches$rResult==1 & matches$YearSeason==Season),]
+    
+    # In all the blueWins for this team, get the most popular player for each pos for THIS SEASON
+    blue_poplist <- getTopData(blueWins, "blueTop", "blueADC", "blueJungle", "blueSupport", "blueMiddle")
+    
+    # In all the redWins for this team, get the most popular player for each pos for THIS SEASON
+    red_poplist <- getTopData(redWins, "redTop", "redADC", "redJungle", "redSupport", "redMiddle")
+    
+    # Mark all those matches in main df that fit this particular combi for this team as having the preferred line-up
+    matches$isBluePreferredLineup <- ifelse((matches$blueTop==blue_poplist[1] & matches$blueADC==blue_poplist[2] & matches$blueJungle==blue_poplist[3] & matches$blueSupport==blue_poplist[4] & matches$blueMiddle==blue_poplist[5] & matches$YearSeason==Season), 1, matches$isBluePreferredLineup)
+    matches$isRedPreferredLineup <- ifelse((matches$redTop==red_poplist[1] & matches$redADC==red_poplist[2] & matches$redJungle==red_poplist[3] & matches$redSupport==red_poplist[4] & matches$redMiddle==red_poplist[5]  & matches$YearSeason==Season), 1, matches$isRedPreferredLineup)
+    
+    # In all the blueWins for this team, get the most popular champion for each pos for THIS SEASON
+    blue_champlist <- getTopData(blueWins, "blueTopChamp", "blueADCChamp", "blueJungleChamp", "blueSupportChamp", "blueMiddleChamp")
+    
+    # In all the redWins for this team, get the most popular champion for each pos for THIS SEASON
+    red_champlist <- getTopData(redWins, "redTopChamp", "redADCChamp", "redJungleChamp", "redSupportChamp", "redMiddleChamp")
+    
+    # Mark all those matches that fit this particular combi for this team as having the preferred champions line-up
+    matches$isBluePreferredChamps <- ifelse((matches$blueTopChamp==blue_champlist[1] & matches$blueADCChamp==blue_champlist[2] & matches$blueJungleChamp==blue_champlist[3] & matches$blueSupportChamp==blue_champlist[4] & matches$blueMiddleChamp==blue_champlist[5]  & matches$YearSeason==Season), 1, matches$isBluePreferredChamps)
+    matches$isRedPreferredChamps <- ifelse((matches$redTopChamp==red_champlist[1] & matches$redADCChamp==red_champlist[2] & matches$redJungleChamp==red_champlist[3] & matches$redSupportChamp==red_champlist[4] & matches$redMiddleChamp==red_champlist[5] & matches$YearSeason==Season), 1, matches$isRedPreferredChamps)
+  }
+}
+
+head(matches)

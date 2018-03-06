@@ -1,0 +1,101 @@
+---
+title: "Describe Data - Pier"
+output:
+  html_document:
+    keep_md: true
+---
+test
+> Do we need to segregate the matches by type?   
+> How does type influence the match gameplay? 
+
+golddiff is defined as goldblue - goldred, by the minute  
+
+> Can we can remove goldblue, goldred? Is the actual quantity significant? 
+
+> There are 4 categories of games. 
+
+```{r}
+matches <- read.csv("matches.csv")
+
+match_categories <- unique(matches$Type)
+print(match_categories)
+print(length(match_categories))
+```
+
+> Analyzing impact of golddiff on wins/losses
+
+```{r}
+# extract just golddiff for analysis
+blue_loss_matches <- matches[matches$bResult==0,]
+just_gold_diff = gsub("\\[|\\]", "", blue_loss_matches$golddiff)
+golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
+golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
+head(golddiff_split_by_min)
+plot(colMeans(golddiff_split_by_min), type="l", xlab="Minutes", ylab="Average Gold Diff (Blue - Red) for blue losing matches") 
+```
+
+
+```{r}
+blue_win_matches <- matches[matches$bResult==1,]
+just_gold_diff = gsub("\\[|\\]", "", blue_win_matches$golddiff)
+golddiff_split_by_min = do.call("rbind", strsplit(just_gold_diff, ",")) # remove the , 
+golddiff_split_by_min = data.frame(apply(golddiff_split_by_min, 2, as.numeric)) # convert str to num
+head(golddiff_split_by_min)
+plot(colMeans(golddiff_split_by_min), type="l", xlab="Minutes", ylab="Average Gold Diff (Blue - Red) for blue winning matches") 
+```
+This graph is almost an inversion of the one before -> leading one to believe that gold amassed is directly correlated to winning. 
+
+
+Identifying Best Champions to Use
+The following is an exercise using *only* TOP position data. 
+
+```{r}
+unique(matches$blueTopChamp)
+with(matches, cor(as.numeric(matches$blueTop), as.numeric(matches$blueTopChamp)))
+```
+There are 75 different champions used in the *top* position. 
+There is not a strong correlation between the player and the champion that they use in the matches (for top position). 
+```{r}
+library(ggplot2)
+blue_win_matches = matches[matches$bResult==1,]
+t <- table(blue_win_matches$blueTopChamp) # gets frequencies
+t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Top 10 Champions Used (Top Position)") + theme(plot.title = element_text(hjust = 0.5))
+
+```
+Now the bottom 10 Champions. (least frequently used)
+```{r}
+t_sorted = sort(t, decreasing=FALSE)[1:12] # sorts and gets bottom 11
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Bottom 10 Champions Used (Top Position)") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+In blue winning matches, some champions like Bard, Teemo, Urgot are not used at all!  
+> One possible strategy is to avoid using these champions. 
+
+> Most popular player to ban by blue
+
+```{r}
+winning_matches <- matches[matches$bResult==1,]
+blue_bans = gsub("\\[|\\]", "", winning_matches$blueBans)
+blue_bans = do.call("rbind", strsplit(blue_bans, ",")) # remove the , 
+t1 <- sort(table(blue_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Blue Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+winning_matches <- matches[matches$rResult==1,]
+red_bans = gsub("\\[|\\]", "", winning_matches$redBans)
+red_bans = do.call("rbind", strsplit(red_bans, ",")) # remove the , 
+t1 <- sort(table(red_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Red Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+
