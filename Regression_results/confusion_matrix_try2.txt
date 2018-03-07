@@ -1,0 +1,153 @@
+Validation
+
+Error matrix for the Decision Tree model on processed_matches.csv [validate] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 263 220  45.5
+     1 169 406  29.4
+
+Error matrix for the Decision Tree model on processed_matches.csv [validate] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 24.9 20.8  45.5
+     1 16.0 38.4  29.4
+
+Overall error: 36.7%, Averaged class error: 37.45%
+
+Rattle timestamp: 2018-03-06 22:47:32 pierlim
+======================================================================
+Error matrix for the Extreme Boost model on processed_matches.csv [validate] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 320 161  33.5
+     1 163 409  28.5
+
+Error matrix for the Extreme Boost model on processed_matches.csv [validate] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 30.4 15.3  33.5
+     1 15.5 38.8  28.5
+
+Overall error: 30.8%, Averaged class error: 31%
+
+Rattle timestamp: 2018-03-06 22:47:32 pierlim
+======================================================================
+Error matrix for the SVM model on processed_matches.csv [validate] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 316 165  34.3
+     1 144 428  25.2
+
+Error matrix for the SVM model on processed_matches.csv [validate] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 30.0 15.7  34.3
+     1 13.7 40.6  25.2
+
+Overall error: 29.4%, Averaged class error: 29.75%
+
+Rattle timestamp: 2018-03-06 22:47:33 pierlim
+======================================================================
+Error matrix for the Neural Net model on processed_matches.csv [validate] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 305 176  36.6
+     1 212 360  37.1
+
+Error matrix for the Neural Net model on processed_matches.csv [validate] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 29.0 16.7  36.6
+     1 20.1 34.2  37.1
+
+Overall error: 36.8%, Averaged class error: 36.85%
+
+Rattle timestamp: 2018-03-06 22:47:33 pierlim
+======================================================================
+
+
+
+
+Testing
+
+Error matrix for the Decision Tree model on processed_matches.csv [test] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 240 234  49.4
+     1 153 433  26.1
+
+Error matrix for the Decision Tree model on processed_matches.csv [test] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 22.6 22.1  49.4
+     1 14.4 40.8  26.1
+
+Overall error: 36.6%, Averaged class error: 37.75%
+
+Rattle timestamp: 2018-03-06 22:57:59 pierlim
+======================================================================
+Error matrix for the Extreme Boost model on processed_matches.csv [test] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 305 163  34.8
+     1 155 430  26.5
+
+Error matrix for the Extreme Boost model on processed_matches.csv [test] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 29.0 15.5  34.8
+     1 14.7 40.8  26.5
+
+Overall error: 30.2%, Averaged class error: 30.65%
+
+Rattle timestamp: 2018-03-06 22:57:59 pierlim
+======================================================================
+Error matrix for the SVM model on processed_matches.csv [test] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 293 175  37.4
+     1 132 453  22.6
+
+Error matrix for the SVM model on processed_matches.csv [test] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 27.8 16.6  37.4
+     1 12.5 43.0  22.6
+
+Overall error: 29.2%, Averaged class error: 30%
+
+Rattle timestamp: 2018-03-06 22:57:59 pierlim
+======================================================================
+Error matrix for the Neural Net model on processed_matches.csv [test] (counts):
+
+      Predicted
+Actual   0   1 Error
+     0 294 174  37.2
+     1 195 390  33.3
+
+Error matrix for the Neural Net model on processed_matches.csv [test] (proportions):
+
+      Predicted
+Actual    0    1 Error
+     0 27.9 16.5  37.2
+     1 18.5 37.0  33.3
+
+Overall error: 35.1%, Averaged class error: 35.25%
+
+Rattle timestamp: 2018-03-06 22:58:00 pierlim
+======================================================================
+
