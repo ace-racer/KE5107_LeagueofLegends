@@ -1,0 +1,187 @@
+---
+title: "Processed Data Discovery"
+output: html_notebook
+---
+## Get correlation between the number of kills and the result of the match
+Load the data from the processed file
+```{r}
+# install.packages("corrplot")
+library(corrplot)
+
+setwd('C:/Users/User/Documents/KE5107_LeagueofLegends')
+matches = read.csv("processed_matches.csv")
+game_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
+
+# Get the column name for the red team
+getRedColumnName <- function(p){
+  paste("r", p, "Num", sep="")
+}
+
+# Get the column name for the blue team
+getBlueColumnName <- function(p){
+  paste("b", p, "Num", sep="")
+}
+
+# Get the number of Kills columns for blue and red teams
+blue_num_kills_columns <- lapply(game_elements, getBlueColumnName)
+red_num_kills_columns <- lapply(game_elements, getRedColumnName)
+
+# Combine the Kills columns
+all_num_kills_columns <- c(blue_num_kills_columns, red_num_kills_columns)
+
+all_num_kills_columns_with_result <- c(all_num_kills_columns, "bResult")
+
+
+# Get correlation between the number of kills and the result of the match
+killscor <- cor(matches[,unlist(all_num_kills_columns_with_result)])
+corrplot(killscor, method = "circle")
+
+```
+
+## Get correlation between the first kills and the outcome of the match
+```{r}
+first_kill_columns_with_result <- c("TowersFirstKillBy", "InhibsFirstKillBy", "DragonsFirstKillBy", "BaronsFirstKillBy", "bResult")
+
+# Get correlation between the first kill and the result of the match
+first_kills_correlation <- cor(matches[,unlist(first_kill_columns_with_result)])
+corrplot(first_kills_correlation, method = "circle")
+```
+## Add code to gain insights from the other new features 
+
+
+# 2. HOW DO WINNING TEAMS DIFFER FROM LOSERS? --> no machine learning, just correlation (using .
+
+
+## 2.1 first exploration
+
+All fixed odds + handy created variables. countryname & languagename were not
+allowed (too many variables), and done twice to keep overview. RG and Reg. date
+in both sets. Most interested in how RG cases compare, so it is handy to keep
+those on the first line.
+
+Only in one league the difference between red and blue is tilted the other way. More plays seems to indicate bigger differences.
+
+```{r "splitting the data into training and test in a simple way"}
+## get 75% for training
+sampel <- floor(.75 * nrow(matches))
+
+## set the seed to make your partition reproductible
+set.seed(900)
+train_ind <- sample(seq_len(nrow(matches)), size = sampel)
+
+train <- matches[train_ind, ]
+test <- matches[-train_ind, ]
+```
+
+
+FROM HERE STARTS MY NEW ANALYSIS:
+
+
+
+# 3. BUILDING THE MODELS.
+
+## 3.1 Logistic regression
+
+See https://www.statmethods.net/advstats/glm.html
+
+We have seen now that blue has a slight advantage. 
+Now let us see if we can easily predict the winner of the match. 
+
+We will do this by looking at the column 'blue_wins':
+```{r "let's try some regression1"}
+# Logistic regression is the only valid option: http://thestatsgeek.com/2015/01/17/why-shouldnt-i-use-linear-regression-if-my-outcome-is-binary/ https://www.statmethods.net/advstats/glm.html
+
+# fit the model
+LogModel1 <- glm(bResult ~ golddiff_5mins ,family=binomial(link='logit'),data=train)
+
+# look at a summary of it
+summary(LogModel1)
+```
+You can see that five minutes in the game, the gold difference is already a siginificant predictor.
+
+Is computed by blue - red, so it makes sense that this is a positive predictor.
+
+This will change when we add more of those gold_diff variables (due to multicollinearity):
+```{r "let's try some regression2"}
+
+# adding more variables:
+LogModel2a <- glm(bResult ~ golddiff_5mins + golddiff_10mins + golddiff_20mins ,family=binomial(link='logit'),data=train)
+
+LogModel2b <- glm(bResult ~ golddiff_10mins + golddiff_5mins + golddiff_20mins ,family=binomial(link='logit'),data=train)
+
+
+# look at a summary of it
+summary(LogModel2a)
+
+summary(LogModel2b)
+```
+I made two because later on, when evaluating, we can see the order does matter.
+
+
+```{r "let's try some regression3"}
+
+# adding more variables THIS SHOULD BE ADDED BY STUFF LIKE FIRST KILL BARON, FIRST KILL DRAGON ETC.:
+LogModel3 <- glm(bResult ~ golddiff_5mins + gamelength, family=binomial(link='logit'),data=train)
+
+# look at a summary of it
+summary(LogModel3)
+```
+Interestingly, the gamelength seems to have a significant additional negative relation with whether the blue team won. So the faster the game, the more likely the blue team wins. In this specific combination (with only two variables), every minute a game is shorter increases the log odds of blue winning by 0.0122. Blue seems to have more potential for a quick win. WE SHOULD ADD MORE VARIABLES.
+
+Now we can run the anova() function on the model to analyze the table of deviance:
+```{r "let's try some regression4"}
+
+# adding more variables THIS SHOULD BE ADDED BY STUFF LIKE FIRST KILL BARON, FIRST KILL DRAGON ETC.:
+anova(LogModel1, test="Chisq")
+anova(LogModel2a, test="Chisq")
+anova(LogModel2b, test="Chisq")
+anova(LogModel3, test="Chisq")
+```
+What you would like to see is a significant drop in deviance and the AIC. you can see is that, if you put the later golddiff in first, the earlier ones will lose all their power. It also shows that deviance interpretation can be tricky: the order of variables you put in matters a lot.
+```{r "let's try some regression5"}
+
+# While no exact equivalent to the R2 of linear regression exists, the McFadden R2 index can be used to assess the model fit.
+# install.packages("pscl")
+# library(pscl)
+pR2(LogModel3)
+
+```
+I think McFadden's R2 shows that the model with 2 variables is very weak
+
+
+# 4. TESTING THE MODELS.
+
+## 4.1 Testing using the simple split
+
+https://www.r-bloggers.com/how-to-perform-a-logistic-regression-in-r/
+In the steps above, we briefly evaluated the fitting of the model, now we would like to see how the model is doing when predicting y on a new set of data. By setting the parameter type='response', R will output probabilities in the form of P(y=1|X). Our decision boundary will be 0.5. If P(y=1|X) > 0.5 then y = 1 otherwise y=0. Note that for some applications different thresholds could be a better option.
+
+```{r "Testing the models1"}
+
+fitted.results <- predict(LogModel1,test,type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+misClasificError <- mean(fitted.results != test$bResult)
+print(paste('Accuracy',1-misClasificError))
+
+```
+Original was predict(model,newdata=subset(test,select=c(2,3,4,5,6,7,8)), not sure why they used this subset.
+
+this result is somewhat dependent on the manual split of the data that I made earlier, therefore if you wish for a more precise score, you would be better off running some kind of cross validation such as k-fold cross validation.
+
+```{r "Testing the models2"}
+
+# install.packages("ROCR")
+# library(ROCR)
+p <- predict(LogModel3, test, type="response")
+pr <- prediction(p, test$bResult)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+
+```
+Original was newdata=subset(test,select=c(2,3,4,5,6,7,8)), type="response"), but not sure why they used subset
+
+If you change the variables to LogModel2b you obviously get a much nicer prediction.
