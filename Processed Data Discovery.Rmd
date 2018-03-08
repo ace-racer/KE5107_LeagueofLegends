@@ -2,14 +2,17 @@
 title: "Processed Data Discovery"
 output: html_notebook
 ---
+
 ## Get correlation between the number of kills and the result of the match
 Load the data from the processed file
 ```{r}
+rm(list=ls())
 # install.packages("corrplot")
 library(corrplot)
 
 setwd('C:/Users/User/Documents/KE5107_LeagueofLegends')
-matches = read.csv("processed_matches.csv")
+allmatches = read.csv("processed_matches.csv")
+matches = read.csv("processed_matches_wc.csv")
 game_elements <- c("Towers", "Inhibs", "Dragons", "Barons") 
 
 # Get the column name for the red team
@@ -22,19 +25,6 @@ getBlueColumnName <- function(p){
   paste("b", p, "Num", sep="")
 }
 
-# Get the number of Kills columns for blue and red teams
-blue_num_kills_columns <- lapply(game_elements, getBlueColumnName)
-red_num_kills_columns <- lapply(game_elements, getRedColumnName)
-
-# Combine the Kills columns
-all_num_kills_columns <- c(blue_num_kills_columns, red_num_kills_columns)
-
-all_num_kills_columns_with_result <- c(all_num_kills_columns, "bResult")
-
-
-# Get correlation between the number of kills and the result of the match
-killscor <- cor(matches[,unlist(all_num_kills_columns_with_result)])
-corrplot(killscor, method = "circle")
 
 ```
 
@@ -49,18 +39,42 @@ corrplot(first_kills_correlation, method = "circle")
 ## Add code to gain insights from the other new features 
 
 
-# 2. HOW DO WINNING TEAMS DIFFER FROM LOSERS? --> no machine learning, just correlation (using .
+# 2. So blue has the advantage, but is it significant?
+
+https://stats.stackexchange.com/questions/21581/how-to-assess-whether-a-coin-tossed-900-times-and-comes-up-heads-490-times-is-bi
+Using the normal appoxamination (z-score)
+```{r}
+summary(allmatches$winner)
+
+games <- 3845+3213
+
+standdev <- sqrt(games*0.5*0.5)
+standdev
+
+frommean <- games/2-3212
+frommean
+lookup <- (frommean/standdev)
+lookup
+zscore <- pnorm(lookup)
+#it works, but it is just to big an exeption to get a 0.0000000x value
+zscore <- pnorm(4)
+# so we could say that:
+chance_that_this_blue_advantage_was_a_coincidence <- (1 - .9999999)*2 # *2 to take left tail into account
+
+```
+So even we use .001 as our level of significance, we reject the null hypothesis, it is very unlikely that this distribution was fair.
+
+Faster way to test if H0: p=0.5 at alpha 0.05 holds, by looking at the tails of the distribution (so 0.025 for each tail) under the null as follows:
+```{r}
+borders_of_significance <- qbinom(c(0.025,0.975),size=games,prob=0.5)
+```
+We can see clearly that the null-hypothesis H0 is to be rejected by a alpha of 0.05 and replaced by the alternative hypothesis.
 
 
-## 2.1 first exploration
 
-All fixed odds + handy created variables. countryname & languagename were not
-allowed (too many variables), and done twice to keep overview. RG and Reg. date
-in both sets. Most interested in how RG cases compare, so it is handy to keep
-those on the first line.
+# 3. BUILDING THE MODELS.
 
-Only in one league the difference between red and blue is tilted the other way. More plays seems to indicate bigger differences.
-
+# 3.0 split
 ```{r "splitting the data into training and test in a simple way"}
 ## get 75% for training
 sampel <- floor(.75 * nrow(matches))
@@ -72,13 +86,6 @@ train_ind <- sample(seq_len(nrow(matches)), size = sampel)
 train <- matches[train_ind, ]
 test <- matches[-train_ind, ]
 ```
-
-
-FROM HERE STARTS MY NEW ANALYSIS:
-
-
-
-# 3. BUILDING THE MODELS.
 
 ## 3.1 Logistic regression
 
@@ -92,7 +99,7 @@ We will do this by looking at the column 'blue_wins':
 # Logistic regression is the only valid option: http://thestatsgeek.com/2015/01/17/why-shouldnt-i-use-linear-regression-if-my-outcome-is-binary/ https://www.statmethods.net/advstats/glm.html
 
 # fit the model
-LogModel1 <- glm(bResult ~ golddiff_5mins ,family=binomial(link='logit'),data=train)
+LogModel1 <- glm(bResult ~ golddiff_5mins, family=binomial (link='logit'), data=train)
 
 # look at a summary of it
 summary(LogModel1)
@@ -118,13 +125,42 @@ summary(LogModel2b)
 I made two because later on, when evaluating, we can see the order does matter.
 
 
+
+##########################################
+
+
+NEW: try to use the halfway variables:
+
+
+#########################################
+
+
+
+
 ```{r "let's try some regression3"}
 
 # adding more variables THIS SHOULD BE ADDED BY STUFF LIKE FIRST KILL BARON, FIRST KILL DRAGON ETC.:
-LogModel3 <- glm(bResult ~ golddiff_5mins + gamelength, family=binomial(link='logit'),data=train)
+LogModel3 <- glm(bResult ~ goldblueHalfGame, family=binomial(link='logit'),data=train)
+
+LogModel4 <- glm(bResult ~ goldblueHalfGame + goldredHalfGame, family=binomial(link='logit'),data=train)
+
+
+# limit:
+# can't just use all
+# LogModel5 <- glm(bResult ~ . , family=binomial(link='logit'),data=train)
+
+# Left out yearseason + bKillsFirstDestroyedTime + rKillsFirstDestroyedTime + KillsFirstKillBy + golddiff_5mins + golddiff_10mins + golddiff_20mins + isBluePreferredLineup + isRedPreferredLineup + isBluePreferredChamps + isRedPreferredChamps + bDragonsFirstDestroyedTime + rDragonsFirstDestroyedTime + DragonsFirstKillBy
+LogModel5 <- glm(bResult ~ bInhibs20Mins + rInhibs20Mins + bInhibsHalfGame + rInhibsHalfGame + bDragons20Mins + rDragons20Mins + bDragonsHalfGame + rDragonsHalfGame + bBaronsFirstDestroyedTime + rBaronsFirstDestroyedTime + BaronsFirstKillBy + bBarons20Mins + rBarons20Mins + bBaronsHalfGame + rBaronsHalfGame + bKills20Mins + rKills20Mins + bKillsHalfGame + rKillsHalfGame + goldblue20Mins + goldred20Mins + goldblueHalfGame + goldredHalfGame, family=binomial(link='logit'),data=train)
+
+# GIVES ERROR
+# left out golddiff_5mins + golddiff_10mins + golddiff_20mins +
+LogModel6 <- glm(bResult ~ bInhibs20Mins + rInhibs20Mins + bInhibsHalfGame + rInhibsHalfGame + bDragons20Mins + rDragons20Mins + bDragonsHalfGame + rDragonsHalfGame + bBaronsFirstDestroyedTime + rBaronsFirstDestroyedTime + BaronsFirstKillBy + bBarons20Mins + rBarons20Mins + bBaronsHalfGame + rBaronsHalfGame + bKills20Mins + rKills20Mins + bKillsHalfGame + rKillsHalfGame + goldblue20Mins + goldred20Mins + goldblueHalfGame + goldredHalfGame + bKillsFirstDestroyedTime + rKillsFirstDestroyedTime + KillsFirstKillBy +  isBluePreferredLineup + isRedPreferredLineup + isBluePreferredChamps + isRedPreferredChamps + bDragonsFirstDestroyedTime + rDragonsFirstDestroyedTime + DragonsFirstKillBy + bWinEfficiency +rWinEfficiency, family=binomial(link='logit'),data=train)
+
+# for ease: make one model
+LogModel <- LogModel5
 
 # look at a summary of it
-summary(LogModel3)
+summary(LogModel)
 ```
 Interestingly, the gamelength seems to have a significant additional negative relation with whether the blue team won. So the faster the game, the more likely the blue team wins. In this specific combination (with only two variables), every minute a game is shorter increases the log odds of blue winning by 0.0122. Blue seems to have more potential for a quick win. WE SHOULD ADD MORE VARIABLES.
 
@@ -132,21 +168,71 @@ Now we can run the anova() function on the model to analyze the table of devianc
 ```{r "let's try some regression4"}
 
 # adding more variables THIS SHOULD BE ADDED BY STUFF LIKE FIRST KILL BARON, FIRST KILL DRAGON ETC.:
+
+anova(LogModel, test="Chisq")
+
+
 anova(LogModel1, test="Chisq")
 anova(LogModel2a, test="Chisq")
 anova(LogModel2b, test="Chisq")
 anova(LogModel3, test="Chisq")
+anova(LogModel4, test="Chisq")
+
 ```
 What you would like to see is a significant drop in deviance and the AIC. you can see is that, if you put the later golddiff in first, the earlier ones will lose all their power. It also shows that deviance interpretation can be tricky: the order of variables you put in matters a lot.
 ```{r "let's try some regression5"}
 
 # While no exact equivalent to the R2 of linear regression exists, the McFadden R2 index can be used to assess the model fit.
 # install.packages("pscl")
-# library(pscl)
-pR2(LogModel3)
+library(pscl)
+pR2(LogModel)
 
 ```
 I think McFadden's R2 shows that the model with 2 variables is very weak
+
+
+
+## 3.2 tree model
+
+
+```{r}
+install.packages('rpart')
+library(rpart)
+tree = rpart(bResult ~ bInhibs20Mins + rInhibs20Mins + bInhibsHalfGame + rInhibsHalfGame + bDragons20Mins + rDragons20Mins + bDragonsHalfGame + rDragonsHalfGame + bBaronsFirstDestroyedTime + rBaronsFirstDestroyedTime + BaronsFirstKillBy + bBarons20Mins + rBarons20Mins + bBaronsHalfGame + rBaronsHalfGame + bKills20Mins + rKills20Mins + bKillsHalfGame + rKillsHalfGame + goldblue20Mins + goldred20Mins + goldblueHalfGame + goldredHalfGame, data=train, method="class")
+```
+
+```{r}
+install.packages('rpart.plot')
+install.packages('RColorBrewer')
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+
+fancyRpartPlot(tree)
+
+```
+
+
+
+
+# 3.3 naive bayes
+
+```{r}
+# Try naieve bayes
+
+# We saw already that the numeric variables are higly correlated, but the Naive Bayes assumed conditional independence...
+
+# install.packages('e1071')
+library(e1071)
+#Default Paramters
+nb_default <- naiveBayes(bResult ~ bInhibs20Mins + rInhibs20Mins + bInhibsHalfGame + rInhibsHalfGame + bDragons20Mins + rDragons20Mins + bDragonsHalfGame + rDragonsHalfGame + bBaronsFirstDestroyedTime + rBaronsFirstDestroyedTime + BaronsFirstKillBy + bBarons20Mins + rBarons20Mins + bBaronsHalfGame + rBaronsHalfGame + bKills20Mins + rKills20Mins + bKillsHalfGame + rKillsHalfGame + goldblue20Mins + goldred20Mins + goldblueHalfGame + goldredHalfGame, data=train)
+
+print(nb_default)
+
+  predict(nb_default, train, type='raw')
+```
+
+
 
 
 # 4. TESTING THE MODELS.
@@ -158,7 +244,7 @@ In the steps above, we briefly evaluated the fitting of the model, now we would 
 
 ```{r "Testing the models1"}
 
-fitted.results <- predict(LogModel1,test,type='response')
+fitted.results <- predict(LogModel,test,type='response')
 fitted.results <- ifelse(fitted.results > 0.5,1,0)
 misClasificError <- mean(fitted.results != test$bResult)
 print(paste('Accuracy',1-misClasificError))
@@ -171,8 +257,8 @@ this result is somewhat dependent on the manual split of the data that I made ea
 ```{r "Testing the models2"}
 
 # install.packages("ROCR")
-# library(ROCR)
-p <- predict(LogModel3, test, type="response")
+library(ROCR)
+p <- predict(LogModel, test, type="response")
 pr <- prediction(p, test$bResult)
 prf <- performance(pr, measure = "tpr", x.measure = "fpr")
 plot(prf)
@@ -185,3 +271,70 @@ auc
 Original was newdata=subset(test,select=c(2,3,4,5,6,7,8)), type="response"), but not sure why they used subset
 
 If you change the variables to LogModel2b you obviously get a much nicer prediction.
+
+
+```{r}
+rpart(formula, data=, method=,control=) 
+
+
+```
+
+#4.2 testing tree
+
+```{r}
+Prediction <- predict(tree, test, type = "class")
+submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
+
+printcp(tree) # display the results 
+plotcp(tree) # visualize cross-validation results 
+summary(fit) # detailed summary of splits
+
+
+# plot tree 
+plot(fit, uniform=TRUE, 
+  	main="Classification Tree for Kyphosis")
+text(fit, use.n=TRUE, all=TRUE, cex=.8)
+```
+
+
+
+
+#4.3 testing naive bayes
+```{r}
+
+
+
+printALL=function(model){
+  trainPred=predict(model, newdata = train, type = "class")
+  trainTable=table(train$bResult, trainPred)
+  testPred=predict(nb_default, newdata=test, type="class")
+  testTable=table(test$bResult, testPred)
+  trainAcc=(trainTable[1,1]+trainTable[2,2])/sum(trainTable)
+  testAcc=(testTable[1,1]+testTable[2,2])/sum(testTable)
+  message("Contingency Table for Training Data")
+  print(trainTable)
+  message("Contingency Table for Test Data")
+  print(testTable)
+  message("Accuracy")
+  print(round(cbind(trainAccuracy=trainAcc, testAccuracy=testAcc),3))
+}
+printALL(nb_default)
+
+```
+```{r}
+install.packages("caret")
+install.packages("kernlab")
+library(caret)
+
+# remove the 67th column
+predictvect<-matches[,-67]
+
+bluewinvect<-matches$bResult
+model <- train(predictvect, bluewinvect, 'nb', trControl=trainControl(method='cv', number =10))
+
+
+```
+```{r}
+
+```
+
