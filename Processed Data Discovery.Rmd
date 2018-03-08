@@ -41,8 +41,7 @@ corrplot(first_kills_correlation, method = "circle")
 
 # 2. So blue has the advantage, but is it significant?
 
-https://stats.stackexchange.com/questions/21581/how-to-assess-whether-a-coin-tossed-900-times-and-comes-up-heads-490-times-is-bi
-Using the normal appoxamination (z-score)
+Using the normal appoxamination (z-score (not t-score because we know the mean of the population))
 ```{r}
 summary(allmatches$winner)
 
@@ -68,7 +67,7 @@ Faster way to test if H0: p=0.5 at alpha 0.05 holds, by looking at the tails of 
 ```{r}
 borders_of_significance <- qbinom(c(0.025,0.975),size=games,prob=0.5)
 ```
-We can see clearly that the null-hypothesis H0 is to be rejected by a alpha of 0.05 and replaced by the alternative hypothesis.
+We can also see clearly that the null-hypothesis H0 is to be rejected by a alpha of 0.05 and replaced by the alternative hypothesis (p<>0.5)
 
 
 
