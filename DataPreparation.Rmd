@@ -1,0 +1,575 @@
+---
+title: "Process the league of legends dataset"
+output: html_notebook
+---
+
+## Global configuration variables to control the data in the generated file
+```{r}
+ shouldDiscardTimeSeriesColumnsFromProcessedFile <- TRUE
+ processedFileNameWithExtension <- "processed_matches.csv"
+```
+
+## Process the current data and get:
+
+1. Number of game elements (towers, inhibitors, dragons and barons) killed or destroyed by red and blue teams in the columns bTowersNum	bInhibsNum	bDragonsNum	bBaronsNum	bHeraldsNum	rTowersNum	rInhibsNum	rDragonsNum	rBaronsNum	rHeraldsNum
+
+2. The time when the game element (towers, inhibitors, dragons and barons) was destroyed by the red and the blue teams. This value is 1000 if there was no element destroyed by that team. The columns created are bTowersFirstDestroyedTime,	rTowersFirstDestroyedTime,		bInhibsFirstDestroyedTime,	rInhibsFirstDestroyedTime,		bDragonsFirstDestroyedTime,	rDragonsFirstDestroyedTime
+
+3. The team that first killed pr destroyed a game element (towers, inhibitors, dragons and barons). This value is 1 if it was performed by the Blue team and 0 if performed by the Red team. These columns are TowersFirstKillBy,	InhibsFirstKillBy, DragonsFirstKillBy
+```{r}
+library(stringr)
+
+matchesData = read.csv("data/matches.csv")
+gameElements <- c("Towers", "Inhibs", "Dragons", "Barons") 
+
+# Prepends r to the item
+prependRed <- function(p) {
+  paste("r", p, sep="")
+}
+
+# Prepends b to the item
+prependBlue <- function(p) {
+  paste("b", p, sep="")
+}
+
+# Get the smallest number from a series of numbers
+getSmallestNumber <- function(value) {
+  if (value != "[]") {
+    # Get all the number strings from the list
+    allNumbers <- str_extract_all(value, "[0-9]*[.][0-9]*")
+    
+    # Get the number strings in a list
+    allNumbersList <- unlist(allNumbers)
+    
+    # Convert each item to a number
+    allNumbersList <- as.numeric(allNumbersList)
+    
+    # Sort all the numbers
+    allNumbersListSorted <- allNumbersList[order(allNumbersList)]
+    
+    # Get the first number
+    return(allNumbersListSorted[1])
+  }
+  
+  # A high value if the no number is not present
+  return(10000)
+}
+
+# Get the number of items less than 5 mins, 10 mins, 20 mins, quarter game and half game
+getNumberOfItemsLessThanEqualToValue <- function(value, gameLength, option) {
+  numberOfDestroysByTime = 0
+  if (value != "[]") {
+
+
+    # Get all the number strings from the list
+    allNumbers <- str_extract_all(value, "[0-9]*[.][0-9]*")
+
+    # Get the number strings in a list
+    allNumbersList <- unlist(allNumbers)
+
+    # Convert each item to a number
+    allNumbersList <- as.numeric(allNumbersList)
+
+
+    quarterGameLength <- 0.25 * gameLength
+    halfGameLength <- 0.5 * gameLength
+
+    # Get the values for 5 mins, 10 mins, 20 mins and quarter and half time into the game
+    lessThanValues <- c(5, 10, 20, quarterGameLength, halfGameLength)
+    requiredLessThanValue = lessThanValues[option]
+
+    for (i in 1:length(allNumbersList)){
+        if (allNumbersList[i] <= requiredLessThanValue){
+          numberOfDestroysByTime <- numberOfDestroysByTime + 1
+        }
+    }
+  }
+  
+  return (numberOfDestroysByTime)
+}
+
+# Get the number of items less than 5 mins, 10 mins, 20 mins, quarter game and half game
+getAbsoluteGoldLessThanEqualToValue <- function(value, gameLength, option) {
+  goldAmount = 0
+  if (value != "[]") {
+
+
+    # Get all the number strings from the list
+    allNumbers <- str_extract_all(value, "[0-9]+")
+    
+
+    # Get the number strings in a list
+    allNumbersList <- unlist(allNumbers)
+
+    # Convert each item to a number
+    allNumbersList <- as.numeric(allNumbersList)
+
+
+    quarterGameLength <- 0.25 * gameLength
+    halfGameLength <- 0.5 * gameLength
+
+    # Get the values for 5 mins, 10 mins, 20 mins and quarter and half time into the game
+    lessThanValues <- c(5, 10, 20, quarterGameLength, halfGameLength)
+    requiredLessThanValue = lessThanValues[option]
+
+    goldAmount = allNumbersList[as.integer(round(requiredLessThanValue))]
+  }
+  
+  return (goldAmount)
+}
+
+# Get the Kills columns for blue and red teams
+blueKillsColumns <- lapply(gameElements, prependBlue)
+redKillsColumns <- lapply(gameElements, prependRed)
+
+# Combine the Kills columns
+allKillsColumns <- c(blueKillsColumns, redKillsColumns)
+
+for (i in 1:length(allKillsColumns)) {
+  columnName <- unlist(allKillsColumns[i])
+  outputColumnName <- paste(columnName, "Num", sep="")
+  
+  # Each item is enclosed in its own square brackets. Note that there is an extra [ to contain all the elements which needs to be removed
+  matchesData[,outputColumnName] <- str_count(matchesData[,columnName], "\\[")-1
+}
+
+firstKillElements <- c("Towers", "Inhibs", "Dragons", "Barons", "Kills", "gold") 
+for (i in 1: length(firstKillElements)) {
+  columnName <- unlist(firstKillElements[i])
+   
+  if(columnName == "gold") {
+    redColumnName <- "goldred"
+    blueColumnName <- "goldblue"
+  }
+  else {
+  # Get the red and blue specific column names
+  redColumnName <- paste("r", columnName,sep="")
+  blueColumnName <- paste("b", columnName,sep="")
+  
+  # Get the output column name to store the first destroyed time
+  redOutputColumnName <- paste("r", columnName, "FirstDestroyedTime",sep="")
+  blueOutputColumnName <- paste("b", columnName, "FirstDestroyedTime",sep="")
+  
+  # Get the first number from the list of numbers
+  
+  matchesData[,blueOutputColumnName] <- unlist(lapply(as.character(matchesData[,blueColumnName]), getSmallestNumber))
+  
+  matchesData[,redOutputColumnName] <- unlist(lapply(as.character(matchesData[,redColumnName]), getSmallestNumber))
+  
+  # convert the first kill times to numeric for comparison
+  matchesData[,blueOutputColumnName] <- as.numeric(matchesData[,blueOutputColumnName])
+  matchesData[,redOutputColumnName] <- as.numeric(matchesData[,redOutputColumnName])
+  
+  # Get the name of the output column
+  firstKillByColumnName <- paste(columnName, "FirstKillBy",sep="")
+  
+  matchesData[,firstKillByColumnName] <- as.numeric(matchesData[,blueOutputColumnName] < matchesData[,redOutputColumnName])
+  }
+  
+  
+  
+  columnSuffices <- c("5Mins", "10Mins", "20Mins", "QuarterGame", "HalfGame")
+  
+  # Generate the columns to contain the interval wise number of game elements destroyed
+  for (j in 1:length(columnSuffices)) {
+     redIntervalColumnName <-  paste(redColumnName, columnSuffices[j], sep="")
+     blueIntervalColumnName <- paste(blueColumnName, columnSuffices[j], sep="") 
+     
+     if(columnName == "gold") {
+        matchesData[,blueIntervalColumnName] <- unlist(mapply(getAbsoluteGoldLessThanEqualToValue, matchesData[,blueColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+  
+  matchesData[,redIntervalColumnName] <- unlist(mapply(getAbsoluteGoldLessThanEqualToValue, matchesData[,redColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+     }
+     else {
+     matchesData[,blueIntervalColumnName] <- unlist(mapply(getNumberOfItemsLessThanEqualToValue, matchesData[,blueColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+  
+  matchesData[,redIntervalColumnName] <- unlist(mapply(getNumberOfItemsLessThanEqualToValue, matchesData[,redColumnName], matchesData[,"gamelength"], SIMPLIFY = FALSE, option = j))
+     }
+  }
+}
+
+```
+
+## Insert code to do other processing of the matches data
+## Vaibhav - first blood and gold diff
+
+```{r}
+
+#Supress the Warnings
+options(warn=-1)
+matches <- matchesData[which(matchesData$bKills != "[]" & matchesData$rKills != "[]" )  ,]
+
+#We will try to fetch the first blood timings for team blue and team red
+bKills_data = gsub("\\[|\\]", "", matches$bKills)
+bkills_sep = do.call("rbind", strsplit(bKills_data, ",")) # remove the , 
+bfirstblood_time = data.frame(apply(bkills_sep, 2, as.numeric)) # convert str to num
+bfirstblood_timings <- bfirstblood_time$X1
+
+rKills_data = gsub("\\[|\\]", "", matches$rKills)
+rkills_sep = do.call("rbind", strsplit(rKills_data, ",")) # remove the , 
+rfirstblood_time = data.frame(apply(rkills_sep, 2, as.numeric)) # convert str to num
+rfirstblood_timings <- rfirstblood_time$X1
+
+#Now we will compare the timings for both of them and make a new column called "FirstBlood",If Blue team takes first blood then Column value will be 1 or else 0
+x <- ifelse((bfirstblood_timings<rfirstblood_timings) , 1,0)
+matches$FirstBlood <- x
+
+#We will create the different dataframe to store empty bKills and rKills
+matches1 <- matchesData[which(matchesData$bKills == "[]" | matchesData$rKills == "[]")  ,]
+y <-ifelse(matches1$rKills == "[]",1,0)
+matches1$FirstBlood <- y
+
+#We will merge the dataframes now.
+matchesData <- rbind(matches,matches1)
+
+#Blue tem stats
+matches_tot_bwins <- nrow(matchesData[which(matchesData$bResult == "1")  ,])
+#matches_tot_bwins  
+#3845
+matches_bfirstblood <- nrow(matchesData[which(matchesData$bResult == "1"  & matchesData$FirstBlood == "1" )  ,])
+#matches_bfirstblood
+#2388
+win_bratio <- matches_bfirstblood/matches_tot_bwins
+win_bratio
+#0.621066319895969
+
+#Red Team Stats
+matches_tot_rwins <- nrow(matchesData[which(matchesData$rResult == "1")  ,])
+#matches_tot_rwins  
+#3213
+matches_rfirstblood <- nrow(matchesData[which(matchesData$rResult == "1"  & matchesData$FirstBlood == "0" )  ,])
+#matches_rfirstblood
+#1977
+win_rratio <- matches_rfirstblood/matches_tot_rwins
+win_rratio
+#0.61531279178338
+
+#Now we will fetch out the Gold at 5,10 and 20 minutes of the time.Negative Gold Difference means Red Team is leading while positive Gold DIfferencde means Blue team is leading
+golddiff_data = gsub("\\[|\\]", "", matchesData$golddiff)
+golddiff_data = do.call("rbind", strsplit(golddiff_data, ",")) # remove the , 
+golddiff_times = data.frame(apply(golddiff_data, 2, as.numeric)) # convert str to num
+#golddiff_times
+matchesData$golddiff_5mins <- golddiff_times$X5
+
+matchesData$golddiff_10mins <- golddiff_times$X10
+
+matchesData$golddiff_20mins <- golddiff_times$X20
+
+
+#Now we will fetch out the Gold Difference and Winning Combinations
+#The ratio of Red Team Gold difference for which they were leading for first 20 mins
+result_20mins <-matchesData[which((strtoi(matchesData$golddiff_20mins, base = 0L))<0 & matchesData$bResult == '0'),]
+rratio_20mins <-nrow(result_20mins)/matches_tot_rwins
+#rratio_20mins
+#0.447245564892624
+
+#The ratio of Blue Team Gold difference for which they were leading for first 20 mins
+result_20mins <-matchesData[which((strtoi(matchesData$golddiff_20mins, base = 0L))<0 & matchesData$bResult == '1'),]
+bratio_20mins <-nrow(result_20mins)/matches_tot_bwins
+#bratio_20mins
+#0.466579973992198
+
+#The ratio of Red Team Gold difference for which they were leading for first 10 mins
+result_10mins <-matchesData[which((strtoi(matchesData$golddiff_10mins, base = 0L))<0 & matchesData$bResult == '0'),]
+rratio_10mins <-nrow(result_10mins)/matches_tot_rwins
+#rratio_10mins
+#0.48708372237784
+
+#The ratio of Blue Team Gold difference for which they were leading for first 10 mins
+result_10mins <-matchesData[which((strtoi(matchesData$golddiff_10mins, base = 0L))<0 & matchesData$bResult == '1'),]
+bratio_10mins <-nrow(result_10mins)/matches_tot_bwins
+#bratio_10mins
+#0.4777633289987
+```
+
+## Code to get effectiveness of teams (Wins / Total Matches Played by Team)
+- rWinEfficiency : how efficient red is at winning matches
+- bWinEfficiency : how efficient blue is at winning matches
+```{r}
+# Charles's snippet to get YearSeason variable for easier seasonal handling
+matchesData$YearSeason <- ifelse(matchesData$Season == "Spring", paste("01/01/", as.character(matchesData$Year), sep=""), paste("01/06/", as.character(matchesData$Year), sep=""))
+
+# install.packages("data.table")
+
+library(data.table)
+
+# Total matches played by each team (consider them as blue or red)
+blueTeams = data.frame(table(matchesData$blueTeamTag))
+redTeams = data.frame(table(matchesData$redTeamTag))
+names(blueTeams)[names(blueTeams) == 'Var1'] <- 'Team'
+names(redTeams)[names(redTeams) == 'Var1'] <- 'Team'
+combinedPlayed <- merge(blueTeams, redTeams, by="Team", all=TRUE)
+setnames(combinedPlayed, "Freq.y", "rMatchesPlayed")
+setnames(combinedPlayed, "Freq.x", "bMatchesPlayed")
+combinedPlayed$totalPlayed <- combinedPlayed$bMatchesPlayed + combinedPlayed$rMatchesPlayed
+
+# Get each team wins, whether they won as blue or red
+bluewin <- subset(matchesData, matchesData$bResult==1)
+redwin <- subset(matchesData, matchesData$bResult==0)
+blueTeamWin = data.frame(table(bluewin$blueTeamTag))
+redTeamWin = data.frame(table(redwin$redTeamTag))
+names(blueTeamWin)[names(blueTeamWin) == 'Var1'] <- 'Team'
+names(redTeamWin)[names(redTeamWin) == 'Var1'] <- 'Team'
+combinedWins <- merge(blueTeamWin, redTeamWin, by="Team", all=TRUE)
+setnames(combinedWins, "Freq.y", "rMatchesWon")
+setnames(combinedWins, "Freq.x", "bMatchesWon")
+combinedWins$totalWon <- combinedWins$bMatchesWon + combinedWins$rMatchesWon
+
+# Merge and calc the win efficiency of each team
+combinedTeams <- merge(combinedWins, combinedPlayed, by="Team")
+combinedTeams$winEfficiency = combinedTeams$totalWon / combinedTeams$totalPlayed
+combinedTeams[is.na(combinedTeams)] <- 0 
+
+# Helper fn to shift columns specified - this is heavy on processing, is there a better way? 
+movetolast <- function(data, move) {
+  data[c(setdiff(names(data), move), move)]
+}
+
+combinedTeams_blue = combinedTeams[,-c(2:7)] # remove unecessary columns
+setnames(combinedTeams_blue, "winEfficiency", "bWinEfficiency")
+setnames(combinedTeams_blue, "Team", "blueTeamTag")
+matchesData <- merge(combinedTeams_blue, matchesData, by="blueTeamTag")
+
+combinedTeams_red = combinedTeams[,-c(2:7)] # remove unecessary columns
+setnames(combinedTeams_red, "winEfficiency", "rWinEfficiency")
+setnames(combinedTeams_red, "Team", "redTeamTag")
+matchesData <- merge(combinedTeams_red, matchesData, by="redTeamTag")
+
+matchesData <- (matchesData[with(matchesData, order(matchesData$League)), ])
+#head(matchesData)
+movetolast(matchesData, c("bWinEfficiency", "rWinEfficiency"))
+
+```
+
+## Code to get preferred winning player and champions lineup, with respect to player positions. 
+- isBluePreferredLineup : is the current config of players blue's preferred winning formation (for the season)?
+- isRedPreferredLineup : same, but for red
+- isBluePreferredChamp : is the current config of champions blue's preferred winning champions formation (for the season)?
+- isRedPreferredChamp: same, but for red
+
+```{r}
+library(plyr)
+# Warning : this code takes some time to load as there's a nested for loop
+
+# add new columns to matches, default val 0
+matchesData$isBluePreferredLineup <- 0
+matchesData$isRedPreferredLineup <- 0
+matchesData$isBluePreferredChamps <- 0
+matchesData$isRedPreferredChamps <- 0
+
+# this gets the top frequency data from each col a-e for dataframe data
+# returns a list of the desired top, adc, jungle, support, middle pos values
+getTopData <- function(data, a, b, c, d, e) {
+  top <- names (sort(table(data[[a]]), decreasing=TRUE)[1] )
+  adc <- names (sort(table(data[[b]]), decreasing=TRUE)[1] )
+  jungle <- names (sort(table(data[[c]]), decreasing=TRUE)[1])
+  support <- names (sort(table(data[[d]]), decreasing=TRUE)[1])
+  middle <- names (sort(table(data[[e]]), decreasing=TRUE)[1])
+  
+  return(list(top, adc, jungle, support, middle)) 
+}
+
+seasons = data.frame(table(matchesData$YearSeason))
+names(seasons)[names(seasons) == 'Var1'] <- 'YearSeasons'
+
+for (season_num in 1:nrow(seasons)) {
+  Season <- seasons[season_num,1] # 7 in total
+
+  for (row  in 1:nrow(combinedPlayed)) { 
+    Team <- combinedPlayed[row, 1]
+    if (is.na(Team)) next # skip nonsense no team name data
+    
+    # Get all instances of when this team wins for this season (blue/red)
+    blueWins <- matchesData[which(matchesData$blueTeamTag==Team & matchesData$bResult==1 & matchesData$YearSeason==Season),]
+    redWins <- matchesData[which(matchesData$redTeamTag==Team & matchesData$bResult==0 & matchesData$YearSeason==Season),]
+    
+    # In all the blueWins for this team, get the most popular player for each pos for THIS SEASON
+    blue_poplist <- getTopData(blueWins, "blueTop", "blueADC", "blueJungle", "blueSupport", "blueMiddle")
+    
+    # In all the redWins for this team, get the most popular player for each pos for THIS SEASON
+    red_poplist <- getTopData(redWins, "redTop", "redADC", "redJungle", "redSupport", "redMiddle")
+    
+    # Mark all those matches in main df that fit this particular combi for this team as having the preferred line-up
+    matchesData$isBluePreferredLineup <- ifelse((matchesData$blueTop==blue_poplist[1] & 
+                                             matchesData$blueADC==blue_poplist[2] & 
+                                             matchesData$blueJungle==blue_poplist[3] & 
+                                             matchesData$blueSupport==blue_poplist[4] & 
+                                             matchesData$blueMiddle==blue_poplist[5] & 
+                                             matchesData$YearSeason==Season), 1, 
+                                             matchesData$isBluePreferredLineup)
+    
+    matchesData$isRedPreferredLineup <- ifelse((matchesData$redTop==red_poplist[1] & 
+                                            matchesData$redADC==red_poplist[2] & 
+                                            matchesData$redJungle==red_poplist[3] & 
+                                            matchesData$redSupport==red_poplist[4] & 
+                                            matchesData$redMiddle==red_poplist[5]  & 
+                                            matchesData$YearSeason==Season), 1, 
+                                            matchesData$isRedPreferredLineup)
+    
+    # In all the blueWins for this team, get the most popular champion for each pos for THIS SEASON
+    blue_champlist <- getTopData(blueWins, "blueTopChamp", "blueADCChamp", "blueJungleChamp", "blueSupportChamp", "blueMiddleChamp")
+    
+    # In all the redWins for this team, get the most popular champion for each pos for THIS SEASON
+    red_champlist <- getTopData(redWins, "redTopChamp", "redADCChamp", "redJungleChamp", "redSupportChamp", "redMiddleChamp")
+    
+    # Mark all those matches that fit this particular combi for this team as having the preferred champions line-up
+    matchesData$isBluePreferredChamps <- ifelse((matchesData$blueTopChamp==blue_champlist[1] & 
+                                             matchesData$blueADCChamp==blue_champlist[2] & 
+                                             matchesData$blueJungleChamp==blue_champlist[3] & 
+                                             matchesData$blueSupportChamp==blue_champlist[4] & 
+                                             matchesData$blueMiddleChamp==blue_champlist[5]  & 
+                                             matchesData$YearSeason==Season), 1, 
+                                             matchesData$isBluePreferredChamps)
+    
+    matchesData$isRedPreferredChamps <- ifelse((matchesData$redTopChamp==red_champlist[1] & 
+                                            matchesData$redADCChamp==red_champlist[2] & 
+                                            matchesData$redJungleChamp==red_champlist[3] & 
+                                            matchesData$redSupportChamp==red_champlist[4] & 
+                                            matchesData$redMiddleChamp==red_champlist[5] & 
+                                            matchesData$YearSeason==Season), 1, 
+                                            matchesData$isRedPreferredChamps)
+  }
+}
+
+```
+
+```{r "0.3 Functions"}
+
+# 0.3.1 cuberoot
+cuberoot_trans = function() trans_new('cuberoot', 
+                                      transform = function(x) x^(1/3), 
+                                      inverse = function(x) X^3)
+
+# 0.3.2 Define new column names: takes in the max number for column and a name, outputs multiple columns
+# Problem: appending to an object in a for loop causes the entire object to be copied on every iteration --> very slow.
+create_column_names <- function(columns, namestring){
+  maxnr <- max(matchesData$columns)
+  vectofnr = c();
+  for (i in 1:columns){
+    # print(i)
+    vectofnr[i] <- paste(namestring, as.character(i), sep="_")
+    # print(vectofnr)
+  }
+  return(vectofnr)
+}
+
+ 
+# because it is so slow, maybe you can also put it in a global var:
+# listofcolumns <- create_column_names(gamelength, 'gold')
+
+# 0.3.3 remove the first and last char
+remove_first_last <- function(inputstring){
+  return(substring(inputstring, 2, str_length(inputstring)-1))
+}
+
+```
+
+```{r "0.4 Data Wrangling"}
+
+# 0.4.1 viewing & correcting types
+str(matchesData)
+# Types seem ok, but have to correct the adjusted variables.
+
+## 0.4.2 making interpretation (and graphs) more easy by adding winner (blue or red) column
+matchesData$winner <- ifelse(matchesData$bResult > 0, c("blue"), c("red"))
+
+## 0.4.3 get rid of [ & ] for later use --> only use once!
+matchesData$goldblue <- remove_first_last(matchesData$goldblue)
+matchesData$golddiff <- remove_first_last(matchesData$golddiff)
+matchesData$goldred <- remove_first_last(matchesData$goldred)
+matchesData$blueBans <- remove_first_last(matchesData$blueBans)
+matchesData$redBans <- remove_first_last(matchesData$redBans)
+
+
+## 0.4.4 Square the data if scewed 
+
+# to do
+
+```
+
+```{r "0.5 New variables"}
+# make a better match variable for easy reading.
+matchesData$winner <- ifelse(matchesData$bResult > 0, c("blue"), c("red"))
+
+# make a better time variable out of year and season
+matchesData$YearSeason <- ifelse(matchesData$Season == "Spring", paste("01/01/", as.character(matchesData$Year), sep=""), paste("01/06/", as.character(matchesData$Year), sep=""))
+
+str(matchesData$YearSeason)
+summary(matchesData$Season)
+
+
+matchesData$YearSeason <- as.Date(matchesData$YearSeason, format = "%d/%m/%Y")
+
+summary(matchesData$YearSeason)
+```
+
+```{r "0.6 Making subsets"}
+
+# # get rid of the annoying space
+# bans_seperated$bansblue_2 <- substr(bans_seperated$bansblue_2, 2, 100)
+# bans_seperated$bansblue_3 <- substr(bans_seperated$bansblue_2, 2, 100)
+# bans_seperated$bansblue_4 <- substr(bans_seperated$bansblue_2, 2, 100)
+# bans_seperated$bansblue_5 <- substr(bans_seperated$bansblue_2, 2, 100)
+# 
+# # make a factor out of everything
+# bans_seperated$bansblue_1 <- as.factor(bans_seperated$bansblue_1)
+# bans_seperated$bansblue_2 <- as.factor(bans_seperated$bansblue_2)
+# bans_seperated$bansblue_3 <- as.factor(bans_seperated$bansblue_3)
+# bans_seperated$bansblue_4 <- as.factor(bans_seperated$bansblue_4)
+# bans_seperated$bansblue_5 <- as.factor(bans_seperated$bansblue_5)
+# 
+# summary(bans_seperated$bansblue_1)
+# 
+# bans_seperated$bansred_2 <- substr(bans_seperated$bansred_2, 2, 100)
+# bans_seperated$bansred_3 <- substr(bans_seperated$bansred_2, 2, 100)
+# bans_seperated$bansred_4 <- substr(bans_seperated$bansred_2, 2, 100)
+# bans_seperated$bansred_5 <- substr(bans_seperated$bansred_2, 2, 100)
+# 
+# bans_seperated$bansred_1 <- as.factor(bans_seperated$bansred_1)
+# bans_seperated$bansred_2 <- as.factor(bans_seperated$bansred_2)
+# bans_seperated$bansred_3 <- as.factor(bans_seperated$bansred_3)
+# bans_seperated$bansred_4 <- as.factor(bans_seperated$bansred_4)
+# bans_seperated$bansred_5 <- as.factor(bans_seperated$bansred_5)
+# 
+# summary(bans_seperated$bansred_1)
+
+# it would be cool if the first bans & pick get a higher weight than the second bans for the popularity score
+# so first ban *5 + second ban *4 .. and so on (for both red and blue and pick and ban)
+
+# then just the score * the picks for each team and we got ourselves a perfect predictor (I hope)
+
+# matchesData$golddiff <- NULL
+# matchesData_seperated$golddiff <- NULL
+# 
+# # may be interesting to make a red vs blue won dataset.
+# 
+# blueset <- subset(matchesData, winner == 'blue')
+# redset <- subset(matchesData, winner == 'red')
+```
+
+
+## Code to remove existing columns from the processed file that will be used for creating models
+```{r}
+# remove the gold diff column as it has redundant information
+matchesData$golddiff <- NULL
+
+# remove the rResults column as it too has redundant information
+matchesData$rResult <- NULL
+
+if (shouldDiscardTimeSeriesColumnsFromProcessedFile) {
+  timeSeriesColumnNames <- c("goldblue", "bKills", "bTowers", "bInhibs", "bDragons", "bBarons", "bHeralds", "goldred", "rKills", "rTowers", "rInhibs", "rDragons", "rBarons", "rHeralds", "goldblueTop", "goldblueJungle", "goldblueMiddle", "goldblueADC", "goldblueSupport", "goldredTop", "goldredJungle", "goldredMiddle", "goldredADC", "goldredSupport")
+  
+  for (i in 1:length(timeSeriesColumnNames)) {
+    columnName <- unlist(timeSeriesColumnNames[i])
+    matchesData[,columnName] <- NULL
+  }
+}
+
+```
+
+
+## Write the current contents of the matchesData dataframe into a CSV in the current folder
+```{r}
+write.csv(matchesData, processedFileNameWithExtension, row.names = FALSE)
+#write.csv(matchesData_seperated, file = "golddifferences.csv", row.names = FALSE)
+```
