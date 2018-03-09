@@ -1,0 +1,117 @@
+---
+title: "League of Legends"
+output:
+  html_document:
+    keep_md: true
+---
+
+========================================================
+
+```{r "0.1 packages"}
+library(ggplot2)
+library(GGally)
+library(tidyr)
+library(stringr)
+library(dplyr)
+
+```
+
+#### Load the data
+```{r}
+matches <- read.csv("data/matches.csv")
+```
+
+#### Distribution of games with game length
+```{r}
+qplot(x = gamelength, data = matches,
+      xlab = 'length of game',
+      ylab = 'Number of games from sample',
+      color = I('black'), fill = I('purple')) +
+  scale_x_continuous()
+```
+
+#### Top winning teams that take the blue and red colours
+```{r}
+
+# blue teams
+bluewin <- subset(matches, matches$bResult==1)
+redwin <- subset(matches, matches$rResult==1)
+
+t <- table(bluewin$blueTeamTag)
+t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Team'
+ggplot(t_sorted_df, aes(x=Team,y=Freq)) + ggtitle("Winning teams with blue colour") +geom_bar(stat = "identity")
+
+
+# red teams
+t <- table(redwin$redTeamTag)
+t_sorted = sort(t, decreasing=TRUE)[1:10] # sorts and gets top 10
+t_sorted_df = data.frame(t_sorted)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Team'
+ggplot(t_sorted_df, aes(x=Team,y=Freq)) + ggtitle("Winning teams with red colour") + geom_bar(stat = "identity")
+
+```
+
+#### Choice of heroes to ban when the team wins
+```{r}
+# Choice of heroes to ban by blue team when they win
+winning_matches <- matches[matches$bResult==1,]
+blue_bans = gsub("\\[|\\]", "", winning_matches$blueBans)
+blue_bans = do.call("rbind", strsplit(blue_bans, ",")) # remove the , 
+t1 <- sort(table(blue_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Blue Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+
+# Choice of heroes to ban by red team when they win
+winning_matches <- matches[matches$rResult==1,]
+red_bans = gsub("\\[|\\]", "", winning_matches$redBans)
+red_bans = do.call("rbind", strsplit(red_bans, ",")) # remove the , 
+t1 <- sort(table(red_bans[,1]), decreasing=TRUE)[1:5]
+t_sorted_df = data.frame(t1)
+names(t_sorted_df)[names(t_sorted_df) == 'Var1'] <- 'Champion'
+ggplot(t_sorted_df, aes(x=Champion,y =Freq)) +geom_bar(stat = "identity") + ggtitle("Most Popular Ban Target by Red Team When They Win") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+#### Distibution of champions by their chosen map positions
+```{r}
+
+appendChamp <- function(p){
+  paste(p, "Champ", sep="")
+}
+
+prependRed <- function(p){
+  paste("red", p, sep="")
+}
+
+prependBlue <- function(p){
+  paste("blue", p, sep="")
+}
+
+getTopChampsForPosition <- function(champNames, n, columnName){
+  print(paste("Location: ", columnName))
+  topChamps <- sort(table(champNames), decreasing = TRUE)
+  topChampsAtPositions <- head(topChamps, n)
+  print(topChampsAtPositions)
+}
+
+mapPositions <- c("Top", "Jungle", "Middle", "ADC", "Support")
+mapPositions <- lapply(mapPositions, appendChamp)
+
+
+blueChampPositions <- lapply(mapPositions, prependBlue)
+redChampPositions <- lapply(mapPositions, prependRed)
+
+
+allChampPositionColumnNames <- c(blueChampPositions, redChampPositions)
+
+allChampsAtPositions <- matches_data[, unlist(allChampPositionColumnNames)]
+
+for(i in 1:length(allChampPositionColumnNames))
+{
+  cname <- unlist(allChampPositionColumnNames[i])
+  topChampsPosition <- getTopChampsForPosition(allChampsAtPositions[,cname], 10, cname)
+  topChampsPosition
+}
+```
