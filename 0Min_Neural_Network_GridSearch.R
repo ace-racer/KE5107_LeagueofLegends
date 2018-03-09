@@ -1,6 +1,5 @@
 library(caret)
 library(dplyr)
-library(mlr)
 
 # load the dataset
 setwd('/Users/davidleonardi/Projects/KE5107_LeagueofLegends')
@@ -9,6 +8,10 @@ matches <- read.csv("processed_matches.csv", na.strings=c(".", "NA", "", "?"), s
 # set default seed value to 42 (Rattle default seed value)
 seed_value = 42
 set.seed(seed_value)
+
+# define training control
+# use 10-folds cross validation
+train_control <- trainControl(method="cv", number=10)
 
 # convert target (y) variable type to factor
 matches$bResult <- as.factor(make.names(matches$bResult))
@@ -52,35 +55,12 @@ training_data = data[training_index,]
 validate_data = data[validate_index,]
 testing_data = data[testing_index,]
 
-nn_task = makeClassifTask(data = training_data, target = "bResult")
-
-#normalize the variables
-nn_task <- normalizeFeatures(nn_task, method = "standardize")
-
-)
-
-print(discrete_ps)
-
-ctrl = makeTuneControlGrid()
-rdesc = makeResampleDesc("CV", iters = 3L)
-
-start <- Sys.time()
-
-params = tuneParams("classif.neuralnet", nn_task , rdesc, par.set = discrete_ps, control = ctrl)
-
-# summarize params
-print(params)
-
-print(Sys.time() - start)
-
-tunegrid <- expand.grid(size = params$x$hidden)
+tunegrid <- expand.grid(.size=c(2, 5, 6, 8, 10, 20), .decay=c(0.01))
 
 model <- caret::train(bResult~., data=training_data, trControl=train_control, 
-                      method = "nnet", tuneGrid=tunegrid, linout = FALSE)   
+               method = "nnet", tuneGrid=tunegrid, linout = FALSE)   
 
 #  a sigmoidal activation function is used and all of the predictions will be constrained to be on [0, 1].
-
-
 
 # summarize results
 print(model)
