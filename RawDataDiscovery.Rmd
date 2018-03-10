@@ -115,3 +115,17 @@ for(i in 1:length(allChampPositionColumnNames))
   topChampsPosition
 }
 ```
+
+#### Number of games by years
+```{r}
+matchesCount2014 <-nrow(matchesData[matchesData$Year=='2014',])
+matchesCount2015 <-nrow(matchesData[matchesData$Year=='2015',])
+matchesCount2016 <-nrow(matchesData[matchesData$Year=='2016',])
+matchesCount2017 <-nrow(matchesData[matchesData$Year=='2017',])
+
+years<-c('2014','2015','2016','2017')
+matchescount<-c(matchesCount2014,matchesCount2015,matchesCount2016,matchesCount2017)
+
+plot(years,matchescount,type = "o", col = "red", xlab = "Years", ylab = "Number of matches",
+   main = "Popularity across the years")
+```
