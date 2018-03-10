@@ -1,7 +1,7 @@
 library(caret)
 
-# load the iris dataset
-setwd("/Users/davidleonardi/Projects/KE5107_LeagueofLegends")
+# load the dataset
+setwd('/Users/davidleonardi/Projects/KE5107/CA_1/KE5107_LeagueofLegends')
 matches <- read.csv("processed_matches.csv",na.strings=c(".", "NA", "", "?"), strip.white=TRUE, encoding="UTF-8")
 
 # set default seed value to 42 (Rattle default seed value)
@@ -13,8 +13,7 @@ matches$bResult <- as.factor(make.names(matches$bResult))
 
 # define training control
 # use 10-folds cross validation
-train_control <- trainControl(method="cv", 
-                              number=10)
+train_control <- trainControl(method="cv", number=10)
 
 # train the model 
 # target = bResult
@@ -46,7 +45,7 @@ testing_data = data[-training_index,]
 # get training header
 str(training_data)
 
-tunegrid <- data.frame(.mtry=2)
+tunegrid <- expand.grid(.mtry=2)
 
 metric <- "Accuracy"
 
@@ -54,7 +53,7 @@ metric <- "Accuracy"
 model <- train(bResult~., 
                data=training_data, 
                tuneGrid=tunegrid,
-               ntree=2000,
+               ntree=250,
                trControl=train_control, 
                metric=metric,
                method = "rf")

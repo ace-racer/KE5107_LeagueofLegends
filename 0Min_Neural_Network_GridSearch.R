@@ -2,7 +2,7 @@ library(caret)
 library(dplyr)
 
 # load the dataset
-setwd('/Users/davidleonardi/Projects/KE5107_LeagueofLegends')
+setwd('/Users/davidleonardi/Projects/KE5107/CA_1/KE5107_LeagueofLegends')
 matches <- read.csv("processed_matches.csv", na.strings=c(".", "NA", "", "?"), strip.white=TRUE, encoding="UTF-8")
 
 # set default seed value to 42 (Rattle default seed value)
@@ -58,7 +58,7 @@ testing_data = data[testing_index,]
 tunegrid <- expand.grid(.size=c(2, 5, 6, 8, 10, 20), .decay=c(0.01))
 
 model <- caret::train(bResult~., data=training_data, trControl=train_control, 
-               method = "nnet", tuneGrid=tunegrid, linout = FALSE)   
+               method = "nnet", tuneGrid=tunegrid, metric = "Accuracy", linout = FALSE)   
 
 #  a sigmoidal activation function is used and all of the predictions will be constrained to be on [0, 1].
 

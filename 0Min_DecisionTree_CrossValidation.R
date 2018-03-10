@@ -1,7 +1,7 @@
 library(caret)
 
 # load the iris dataset
-setwd("/Users/davidleonardi/Projects/KE5107_LeagueofLegends")
+setwd('/Users/davidleonardi/Projects/KE5107/CA_1/KE5107_LeagueofLegends')
 matches <- read.csv("processed_matches.csv",na.strings=c(".", "NA", "", "?"), strip.white=TRUE, encoding="UTF-8")
 
 # set default seed value to 42 (Rattle default seed value)

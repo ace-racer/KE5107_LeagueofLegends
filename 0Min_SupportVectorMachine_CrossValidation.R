@@ -1,7 +1,7 @@
 library(caret)
 
-# load the iris dataset
-setwd("/Users/davidleonardi/Projects/KE5107_LeagueofLegends")
+# load the dataset
+setwd('/Users/davidleonardi/Projects/KE5107/CA_1/KE5107_LeagueofLegends')
 matches <- read.csv("processed_matches.csv",na.strings=c(".", "NA", "", "?"), strip.white=TRUE, encoding="UTF-8")
 
 # set default seed value to 42 (Rattle default seed value)
@@ -13,8 +13,7 @@ matches$bResult <- as.factor(make.names(matches$bResult))
 
 # define training control
 # use 10-folds cross validation
-train_control <- trainControl(method="cv", 
-                              number=10)
+train_control <- trainControl(method="cv", number=10)
 
 # train the model 
 # target = bResult
@@ -47,9 +46,7 @@ testing_data = data[-training_index,]
 str(training_data)
 
 # Use the expand.grid to specify the search space	
-grid <- expand.grid(sigma = c(0.005, 0.01, 0.015, 0.05, 0.1, 0.2, 0.5),
-                    C = c(0.01, 0.05, 0.1, 0.5, 0.75, 0.9, 1, 1.1, 1.25)
-)
+grid <- expand.grid(sigma = c(0.005), C = c(0.5))
 
 start <- Sys.time()
 
